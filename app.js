@@ -1,538 +1,1425 @@
-// ==========================================
-// FANDY TASK APP V5 - FIXED
-// ==========================================
+// =====================================================
+// SUPABASE
+// =====================================================
 
-let tugas = JSON.parse(localStorage.getItem("tugasFandy")) || [];
+const SUPABASE_URL =
+    "https://frlipbvpxvmaiirvpwec.supabase.co";
 
-let xp = Number(localStorage.getItem("xpFandy")) || 0;
-let streak = Number(localStorage.getItem("streakFandy")) || 0;
+const SUPABASE_PUBLISHABLE_KEY =
+    "sb_publishable_7pEnNAunj6-93AXf5uT1mg_N__inABq";
 
-let lastProductiveDate =
-    localStorage.getItem("lastProductiveDate") || "";
+
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+    );
+
+
+// =====================================================
+// GLOBAL
+// =====================================================
+
+let user = null;
+
+let tugas = [];
+
+let nama = "Fandy";
 
 let filterAktif = "semua";
-let searchText = "";
 
-let timer = null;
+let timerInterval = null;
+
 let waktu = 25 * 60;
-let sedangBerjalan = false;
 
 
-// ==========================================
-// STORAGE
-// ==========================================
+// =====================================================
+// START
+// =====================================================
 
-function simpanTugas() {
-    localStorage.setItem("tugasFandy", JSON.stringify(tugas));
-}
+document.addEventListener(
+    "DOMContentLoaded",
+    async function () {
 
+        await cekSession();
 
-// ==========================================
-// MENU
-// ==========================================
+        tampilkanTanggal();
 
-function bukaMenu(menuId, tombol) {
+        updateTimer();
 
-    document.querySelectorAll(".page").forEach(page => {
-        page.classList.remove("active");
-    });
-
-    const page = document.getElementById(menuId);
-
-    if (page) {
-        page.classList.add("active");
     }
-
-    document.querySelectorAll(".menu").forEach(menu => {
-        menu.classList.remove("active");
-    });
-
-    if (tombol) {
-        tombol.classList.add("active");
-    }
-
-    updateDashboard();
-    tampilkanTugas();
-    tampilkanAchievement();
-}
+);
 
 
-// ==========================================
-// TAMBAH TUGAS
-// ==========================================
+// =====================================================
+// SESSION
+// =====================================================
 
-function tambahTugas() {
+async function cekSession() {
 
-    const input = document.getElementById("taskInput");
-    const tanggal = document.getElementById("dateInput");
-    const priority = document.getElementById("priorityInput");
+    const {
+        data,
+        error
+    } =
+        await supabaseClient.auth.getSession();
 
-    if (!input) return;
 
-    const nama = input.value.trim();
+    if (error) {
 
-    if (!nama) {
-        alert("Isi nama tugas dulu bro 😭");
-        input.focus();
+        console.error(error);
+
+        tampilkanLogin();
+
         return;
+
     }
 
-    const tugasBaru = {
-        id: Date.now(),
-        nama: nama,
-        tanggal: tanggal ? tanggal.value : "",
-        priority: priority ? priority.value : "medium",
-        selesai: false,
-        dibuat: new Date().toISOString()
-    };
 
-    tugas.unshift(tugasBaru);
+    if (data.session) {
 
-    simpanTugas();
-
-    input.value = "";
-
-    if (tanggal) {
-        tanggal.value = "";
-    }
-
-    // XP pertama kali membuat tugas
-    if (tugas.length === 1) {
-        tambahXP(10);
-    }
-
-    tampilkanTugas();
-    updateDashboard();
-    tampilkanAchievement();
-}
-
-
-// ==========================================
-// TAMPILKAN TUGAS
-// ==========================================
-
-function tampilkanTugas() {
-
-    const list = document.getElementById("taskList");
-
-    if (!list) return;
-
-    let data = [...tugas];
-
-    // FILTER
-    if (filterAktif === "belum") {
-        data = data.filter(t => !t.selesai);
-    }
-
-    if (filterAktif === "selesai") {
-        data = data.filter(t => t.selesai);
-    }
-
-    // SEARCH
-    if (searchText.trim() !== "") {
-
-        data = data.filter(t =>
-            t.nama
-                .toLowerCase()
-                .includes(searchText.toLowerCase())
+        await masukKeApp(
+            data.session.user
         );
-
-    }
-
-    if (data.length === 0) {
-
-        list.innerHTML = `
-            <div class="empty">
-                Tidak ada tugas yang cocok 😴
-            </div>
-        `;
-
-        return;
-    }
-
-    list.innerHTML = data.map(t => {
-
-        const tanggal = t.tanggal
-            ? formatTanggal(t.tanggal)
-            : "Tidak ada deadline";
-
-        return `
-            <div class="task-item ${t.selesai ? "done" : ""}">
-
-                <input
-                    type="checkbox"
-                    class="task-check"
-                    ${t.selesai ? "checked" : ""}
-                    onchange="selesaiTugas(${t.id})"
-                >
-
-                <div class="task-info">
-
-                    <div class="task-title">
-                        ${escapeHTML(t.nama)}
-                    </div>
-
-                    <div class="task-meta">
-                        📅 ${tanggal}
-                    </div>
-
-                </div>
-
-                <span class="priority priority-${t.priority}">
-                    ${t.priority.toUpperCase()}
-                </span>
-
-                <button
-                    class="edit-btn"
-                    onclick="editTugas(${t.id})">
-                    ✏️
-                </button>
-
-                <button
-                    class="delete-btn"
-                    onclick="hapusTugas(${t.id})">
-                    🗑️
-                </button>
-
-            </div>
-        `;
-
-    }).join("");
-}
-
-
-// ==========================================
-// SELESAI / BATAL SELESAI
-// ==========================================
-
-function selesaiTugas(id) {
-
-    const tugasCari = tugas.find(
-        t => Number(t.id) === Number(id)
-    );
-
-    if (!tugasCari) {
-        console.log("Tugas tidak ditemukan:", id);
-        return;
-    }
-
-    const statusSebelumnya = tugasCari.selesai;
-
-    // TOGGLE STATUS
-    tugasCari.selesai = !tugasCari.selesai;
-
-    // Kalau baru selesai
-    if (!statusSebelumnya && tugasCari.selesai) {
-
-        tambahXP(20);
-
-        updateStreak();
-
-        tampilkanXPNotification();
-
-    }
-
-    // Simpan
-    simpanTugas();
-
-    // Refresh
-    tampilkanTugas();
-    updateDashboard();
-    tampilkanAchievement();
-}
-
-
-// ==========================================
-// EDIT TUGAS
-// ==========================================
-
-function editTugas(id) {
-
-    const tugasCari = tugas.find(
-        t => Number(t.id) === Number(id)
-    );
-
-    if (!tugasCari) return;
-
-    const namaBaru = prompt(
-        "Edit nama tugas:",
-        tugasCari.nama
-    );
-
-    if (namaBaru === null) return;
-
-    const nama = namaBaru.trim();
-
-    if (!nama) {
-        alert("Nama tugas tidak boleh kosong!");
-        return;
-    }
-
-    tugasCari.nama = nama;
-
-    simpanTugas();
-
-    tampilkanTugas();
-    updateDashboard();
-}
-
-
-// ==========================================
-// HAPUS TUGAS
-// ==========================================
-
-function hapusTugas(id) {
-
-    const yakin = confirm(
-        "Hapus tugas ini?"
-    );
-
-    if (!yakin) return;
-
-    tugas = tugas.filter(
-        t => Number(t.id) !== Number(id)
-    );
-
-    simpanTugas();
-
-    tampilkanTugas();
-    updateDashboard();
-    tampilkanAchievement();
-}
-
-
-// ==========================================
-// SEARCH
-// ==========================================
-
-function cariTugas() {
-
-    const input =
-        document.getElementById("searchTask");
-
-    searchText =
-        input ? input.value : "";
-
-    tampilkanTugas();
-}
-
-
-// ==========================================
-// FILTER
-// ==========================================
-
-function filterTugas(filter, tombol) {
-
-    filterAktif = filter;
-
-    document.querySelectorAll(".filter").forEach(btn => {
-        btn.classList.remove("active");
-    });
-
-    if (tombol) {
-        tombol.classList.add("active");
-    }
-
-    tampilkanTugas();
-}
-
-
-// ==========================================
-// XP
-// ==========================================
-
-function tambahXP(jumlah) {
-
-    xp += jumlah;
-
-    localStorage.setItem(
-        "xpFandy",
-        xp
-    );
-
-    updateXP();
-}
-
-
-function updateXP() {
-
-    const xpPerLevel = 100;
-
-    const level =
-        Math.floor(xp / xpPerLevel) + 1;
-
-    const xpDalamLevel =
-        xp % xpPerLevel;
-
-    const levelUser =
-        document.getElementById("levelUser");
-
-    const levelText =
-        document.getElementById("levelText");
-
-    const xpSekarang =
-        document.getElementById("xpSekarang");
-
-    const xpBerikutnya =
-        document.getElementById("xpBerikutnya");
-
-    const xpBar =
-        document.getElementById("xpBar");
-
-    if (levelUser) {
-        levelUser.textContent = level;
-    }
-
-    if (levelText) {
-        levelText.textContent = level;
-    }
-
-    if (xpSekarang) {
-        xpSekarang.textContent = xpDalamLevel;
-    }
-
-    if (xpBerikutnya) {
-        xpBerikutnya.textContent = xpPerLevel;
-    }
-
-    if (xpBar) {
-        xpBar.style.width =
-            `${xpDalamLevel}%`;
-    }
-}
-
-
-// ==========================================
-// XP NOTIFICATION
-// ==========================================
-
-function tampilkanXPNotification() {
-
-    const notif =
-        document.createElement("div");
-
-    notif.className =
-        "xp-notification";
-
-    notif.textContent =
-        "+20 XP 🔥";
-
-    document.body.appendChild(notif);
-
-    setTimeout(() => {
-
-        if (notif) {
-            notif.remove();
-        }
-
-    }, 1800);
-}
-
-
-// ==========================================
-// STREAK
-// ==========================================
-
-function getTanggalLokal() {
-
-    const d = new Date();
-
-    const tahun = d.getFullYear();
-
-    const bulan =
-        String(d.getMonth() + 1)
-            .padStart(2, "0");
-
-    const hari =
-        String(d.getDate())
-            .padStart(2, "0");
-
-    return `${tahun}-${bulan}-${hari}`;
-}
-
-
-function updateStreak() {
-
-    const today =
-        getTanggalLokal();
-
-    if (lastProductiveDate === today) {
-        updateStreakUI();
-        return;
-    }
-
-    if (!lastProductiveDate) {
-
-        streak = 1;
 
     } else {
 
-        const kemarin =
-            new Date();
+        tampilkanLogin();
 
-        kemarin.setDate(
-            kemarin.getDate() - 1
-        );
+    }
 
-        const yesterday =
-            `${kemarin.getFullYear()}-` +
-            `${String(kemarin.getMonth() + 1).padStart(2, "0")}-` +
-            `${String(kemarin.getDate()).padStart(2, "0")}`;
 
-        if (lastProductiveDate === yesterday) {
+    supabaseClient.auth.onAuthStateChange(
+        async function (event, session) {
 
-            streak++;
+            if (
+                event === "SIGNED_IN" &&
+                session
+            ) {
 
-        } else {
+                await masukKeApp(
+                    session.user
+                );
 
-            streak = 1;
+            }
+
+
+            if (
+                event === "SIGNED_OUT"
+            ) {
+
+                tampilkanLogin();
+
+            }
 
         }
-    }
-
-    lastProductiveDate = today;
-
-    localStorage.setItem(
-        "streakFandy",
-        streak
     );
 
-    localStorage.setItem(
-        "lastProductiveDate",
-        lastProductiveDate
-    );
-
-    updateStreakUI();
 }
 
 
-function updateStreakUI() {
+// =====================================================
+// AUTH SCREEN
+// =====================================================
 
-    const element =
-        document.getElementById("streakUser");
+function tampilkanLogin() {
 
-    if (element) {
-        element.textContent = streak;
+    const auth =
+        document.getElementById(
+            "authScreen"
+        );
+
+    const app =
+        document.querySelector(
+            ".app"
+        );
+
+
+    if (auth) {
+        auth.style.display = "flex";
     }
+
+    if (app) {
+        app.style.display = "none";
+    }
+
 }
 
 
-// ==========================================
+function showLogin() {
+
+    document.getElementById(
+        "loginForm"
+    ).style.display = "block";
+
+
+    document.getElementById(
+        "registerForm"
+    ).style.display = "none";
+
+
+    document.getElementById(
+        "authTitle"
+    ).textContent =
+        "Login ke akun kamu";
+
+
+    clearMessages();
+
+}
+
+
+function showRegister() {
+
+    document.getElementById(
+        "loginForm"
+    ).style.display = "none";
+
+
+    document.getElementById(
+        "registerForm"
+    ).style.display = "block";
+
+
+    document.getElementById(
+        "authTitle"
+    ).textContent =
+        "Buat akun baru";
+
+
+    clearMessages();
+
+}
+
+
+function clearMessages() {
+
+    const login =
+        document.getElementById(
+            "loginMessage"
+        );
+
+
+    const register =
+        document.getElementById(
+            "registerMessage"
+        );
+
+
+    if (login) {
+        login.textContent = "";
+    }
+
+
+    if (register) {
+        register.textContent = "";
+    }
+
+}
+
+
+// =====================================================
+// REGISTER
+// =====================================================
+
+async function registerUser() {
+
+    const name =
+        document
+            .getElementById(
+                "registerName"
+            )
+            .value
+            .trim();
+
+
+    const email =
+        document
+            .getElementById(
+                "registerEmail"
+            )
+            .value
+            .trim();
+
+
+    const password =
+        document
+            .getElementById(
+                "registerPassword"
+            )
+            .value;
+
+
+    const message =
+        document.getElementById(
+            "registerMessage"
+        );
+
+
+    if (
+        !name ||
+        !email ||
+        !password
+    ) {
+
+        message.textContent =
+            "❌ Isi semua bagian dulu bro.";
+
+        return;
+
+    }
+
+
+    if (
+        password.length < 6
+    ) {
+
+        message.textContent =
+            "❌ Password minimal 6 karakter.";
+
+        return;
+
+    }
+
+
+    message.textContent =
+        "⏳ Membuat akun...";
+
+
+    const {
+        data,
+        error
+    } =
+        await supabaseClient.auth.signUp({
+
+            email: email,
+
+            password: password,
+
+            options: {
+
+                data: {
+
+                    full_name: name
+
+                }
+
+            }
+
+        });
+
+
+    if (error) {
+
+        console.error(error);
+
+        message.textContent =
+            "❌ " +
+            error.message;
+
+        return;
+
+    }
+
+
+    if (!data.session) {
+
+        message.textContent =
+            "✅ Akun dibuat. Cek email verifikasi, lalu login.";
+
+        return;
+
+    }
+
+
+    message.textContent =
+        "✅ Akun berhasil dibuat!";
+
+}
+
+
+// =====================================================
+// LOGIN
+// =====================================================
+
+async function loginUser() {
+
+    const email =
+        document
+            .getElementById(
+                "loginEmail"
+            )
+            .value
+            .trim();
+
+
+    const password =
+        document
+            .getElementById(
+                "loginPassword"
+            )
+            .value;
+
+
+    const message =
+        document.getElementById(
+            "loginMessage"
+        );
+
+
+    if (
+        !email ||
+        !password
+    ) {
+
+        message.textContent =
+            "❌ Email dan password wajib diisi.";
+
+        return;
+
+    }
+
+
+    message.textContent =
+        "⏳ Login...";
+
+
+    const {
+        data,
+        error
+    } =
+        await supabaseClient.auth.signInWithPassword({
+
+            email: email,
+
+            password: password
+
+        });
+
+
+    if (error) {
+
+        console.error(error);
+
+        message.textContent =
+            "❌ " +
+            error.message;
+
+        return;
+
+    }
+
+
+    message.textContent =
+        "✅ Login berhasil!";
+
+}
+
+
+// =====================================================
+// LOGOUT
+// =====================================================
+
+async function logoutUser() {
+
+    const yakin =
+        confirm(
+            "Yakin mau logout?"
+        );
+
+
+    if (!yakin) {
+        return;
+    }
+
+
+    const {
+        error
+    } =
+        await supabaseClient.auth.signOut();
+
+
+    if (error) {
+
+        alert(
+            "Gagal logout:\n" +
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    location.reload();
+
+}
+
+
+// =====================================================
+// MASUK APP
+// =====================================================
+
+async function masukKeApp(
+    currentUser
+) {
+
+    user = currentUser;
+
+
+    const auth =
+        document.getElementById(
+            "authScreen"
+        );
+
+
+    const app =
+        document.querySelector(
+            ".app"
+        );
+
+
+    if (auth) {
+        auth.style.display = "none";
+    }
+
+
+    if (app) {
+        app.style.display = "flex";
+    }
+
+
+    nama =
+        user.user_metadata?.full_name ||
+        user.email?.split("@")[0] ||
+        "Fandy";
+
+
+    setText(
+        "namaDashboard",
+        nama
+    );
+
+
+    setText(
+        "introName",
+        nama
+    );
+
+
+    setText(
+        "akunEmail",
+        user.email || "-"
+    );
+
+
+    const nameInput =
+        document.getElementById(
+            "namaUser"
+        );
+
+
+    if (nameInput) {
+
+        nameInput.value =
+            nama;
+
+    }
+
+
+    loadTheme();
+
+    loadNotes();
+
+
+    await ambilTugas();
+
+
+    updateDashboard();
+
+    tampilkanAchievement();
+
+
+    const intro =
+        document.getElementById(
+            "intro"
+        );
+
+
+    if (intro) {
+
+        intro.classList.remove(
+            "hide"
+        );
+
+
+        setTimeout(
+            function () {
+
+                intro.classList.add(
+                    "hide"
+                );
+
+            },
+            1600
+        );
+
+    }
+
+}
+
+
+// =====================================================
+// DATABASE - AMBIL TUGAS
+// =====================================================
+
+async function ambilTugas() {
+
+    if (!user) {
+        return;
+    }
+
+
+    const {
+        data,
+        error
+    } =
+        await supabaseClient
+            .from("tasks")
+            .select("*")
+            .eq(
+                "user_id",
+                user.id
+            )
+            .order(
+                "dibuat",
+                {
+                    ascending: false
+                }
+            );
+
+
+    if (error) {
+
+        console.error(error);
+
+        alert(
+            "Database error:\n" +
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    tugas =
+        data || [];
+
+
+    tampilkanTugas();
+
+}
+
+
+// =====================================================
+// MENU
+// =====================================================
+
+function bukaMenu(
+    id,
+    tombol
+) {
+
+    document
+        .querySelectorAll(
+            ".page"
+        )
+        .forEach(
+            page => {
+
+                page.classList.remove(
+                    "active"
+                );
+
+            }
+        );
+
+
+    const halaman =
+        document.getElementById(
+            id
+        );
+
+
+    if (halaman) {
+
+        halaman.classList.add(
+            "active"
+        );
+
+    }
+
+
+    document
+        .querySelectorAll(
+            ".menu"
+        )
+        .forEach(
+            btn => {
+
+                btn.classList.remove(
+                    "active"
+                );
+
+            }
+        );
+
+
+    if (tombol) {
+
+        tombol.classList.add(
+            "active"
+        );
+
+    }
+
+}
+
+
+// =====================================================
+// TAMBAH TUGAS
+// =====================================================
+
+async function tambahTugas() {
+
+    const input =
+        document.getElementById(
+            "taskInput"
+        );
+
+
+    const date =
+        document.getElementById(
+            "dateInput"
+        );
+
+
+    const priority =
+        document.getElementById(
+            "priorityInput"
+        );
+
+
+    const namaTugas =
+        input.value.trim();
+
+
+    if (!namaTugas) {
+
+        alert(
+            "Isi nama tugas dulu bro 😭"
+        );
+
+        return;
+
+    }
+
+
+    if (!user) {
+
+        alert(
+            "Lu belum login."
+        );
+
+        return;
+
+    }
+
+
+    const {
+        data,
+        error
+    } =
+        await supabaseClient
+            .from("tasks")
+            .insert({
+
+                user_id:
+                    user.id,
+
+                nama:
+                    namaTugas,
+
+                deadline:
+                    date.value || null,
+
+                priority:
+                    priority.value,
+
+                selesai:
+                    false,
+
+                selesai_pada:
+                    null
+
+            })
+            .select()
+            .single();
+
+
+    if (error) {
+
+        console.error(error);
+
+        alert(
+            "Gagal menambah tugas:\n" +
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    tugas.unshift(
+        data
+    );
+
+
+    input.value = "";
+
+    date.value = "";
+
+
+    tampilkanTugas();
+
+    updateDashboard();
+
+    tampilkanAchievement();
+
+}
+
+
+// =====================================================
+// TAMPILKAN TUGAS
+// =====================================================
+
+function tampilkanTugas() {
+
+    const container =
+        document.getElementById(
+            "taskList"
+        );
+
+
+    if (!container) {
+        return;
+    }
+
+
+    container.innerHTML = "";
+
+
+    let hasil =
+        [...tugas];
+
+
+    const search =
+        document
+            .getElementById(
+                "searchTask"
+            )
+            ?.value
+            .toLowerCase()
+            .trim() || "";
+
+
+    if (search) {
+
+        hasil =
+            hasil.filter(
+                t =>
+                    t.nama
+                        .toLowerCase()
+                        .includes(
+                            search
+                        )
+            );
+
+    }
+
+
+    if (
+        filterAktif === "belum"
+    ) {
+
+        hasil =
+            hasil.filter(
+                t =>
+                    !t.selesai
+            );
+
+    }
+
+
+    if (
+        filterAktif === "selesai"
+    ) {
+
+        hasil =
+            hasil.filter(
+                t =>
+                    t.selesai
+            );
+
+    }
+
+
+    if (
+        hasil.length === 0
+    ) {
+
+        container.innerHTML = `
+            <div class="empty">
+                Belum ada tugas di sini 😴
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    hasil.forEach(
+        task => {
+
+            const item =
+                document.createElement(
+                    "div"
+                );
+
+
+            item.className =
+                "task-item";
+
+
+            if (task.selesai) {
+
+                item.classList.add(
+                    "completed"
+                );
+
+            }
+
+
+            const checkbox =
+                document.createElement(
+                    "input"
+                );
+
+
+            checkbox.type =
+                "checkbox";
+
+
+            checkbox.className =
+                "task-check";
+
+
+            checkbox.checked =
+                Boolean(
+                    task.selesai
+                );
+
+
+            checkbox.addEventListener(
+                "change",
+                function () {
+
+                    selesaiTugas(
+                        task.id
+                    );
+
+                }
+            );
+
+
+            const info =
+                document.createElement(
+                    "div"
+                );
+
+
+            info.className =
+                "task-info";
+
+
+            const title =
+                document.createElement(
+                    "strong"
+                );
+
+
+            title.textContent =
+                task.nama;
+
+
+            if (task.selesai) {
+
+                title.style.textDecoration =
+                    "line-through";
+
+            }
+
+
+            const detail =
+                document.createElement(
+                    "small"
+                );
+
+
+            let detailText =
+                "";
+
+
+            if (task.deadline) {
+
+                detailText +=
+                    "📅 " +
+                    task.deadline;
+
+            }
+
+
+            if (task.priority) {
+
+                if (detailText) {
+                    detailText +=
+                        " • ";
+                }
+
+
+                detailText +=
+                    "⭐ " +
+                    task.priority;
+
+            }
+
+
+            detail.textContent =
+                detailText;
+
+
+            info.appendChild(
+                title
+            );
+
+
+            info.appendChild(
+                detail
+            );
+
+
+            const editButton =
+                document.createElement(
+                    "button"
+                );
+
+
+            editButton.textContent =
+                "✏️";
+
+
+            editButton.onclick =
+                function () {
+
+                    editTugas(
+                        task.id
+                    );
+
+                };
+
+
+            const deleteButton =
+                document.createElement(
+                    "button"
+                );
+
+
+            deleteButton.textContent =
+                "🗑️";
+
+
+            deleteButton.onclick =
+                function () {
+
+                    hapusTugas(
+                        task.id
+                    );
+
+                };
+
+
+            const actions =
+                document.createElement(
+                    "div"
+                );
+
+
+            actions.className =
+                "task-actions";
+
+
+            actions.appendChild(
+                editButton
+            );
+
+
+            actions.appendChild(
+                deleteButton
+            );
+
+
+            item.appendChild(
+                checkbox
+            );
+
+
+            item.appendChild(
+                info
+            );
+
+
+            item.appendChild(
+                actions
+            );
+
+
+            container.appendChild(
+                item
+            );
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// SELESAIKAN TUGAS
+// =====================================================
+
+async function selesaiTugas(
+    id
+) {
+
+    const task =
+        tugas.find(
+            t =>
+                Number(t.id) ===
+                Number(id)
+        );
+
+
+    if (!task) {
+        return;
+    }
+
+
+    const selesaiBaru =
+        !task.selesai;
+
+
+    const selesaiPada =
+        selesaiBaru
+            ? tanggalHariIni()
+            : null;
+
+
+    const {
+        error
+    } =
+        await supabaseClient
+            .from("tasks")
+            .update({
+
+                selesai:
+                    selesaiBaru,
+
+                selesai_pada:
+                    selesaiPada
+
+            })
+            .eq(
+                "id",
+                id
+            )
+            .eq(
+                "user_id",
+                user.id
+            );
+
+
+    if (error) {
+
+        console.error(error);
+
+        alert(
+            "Gagal mengubah tugas:\n" +
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    task.selesai =
+        selesaiBaru;
+
+
+    task.selesai_pada =
+        selesaiPada;
+
+
+    tampilkanTugas();
+
+    updateDashboard();
+
+    tampilkanAchievement();
+
+}
+
+
+// =====================================================
+// EDIT
+// =====================================================
+
+async function editTugas(
+    id
+) {
+
+    const task =
+        tugas.find(
+            t =>
+                Number(t.id) ===
+                Number(id)
+        );
+
+
+    if (!task) {
+        return;
+    }
+
+
+    const namaBaru =
+        prompt(
+            "Edit nama tugas:",
+            task.nama
+        );
+
+
+    if (
+        namaBaru === null
+    ) {
+        return;
+    }
+
+
+    if (
+        !namaBaru.trim()
+    ) {
+
+        alert(
+            "Nama tugas tidak boleh kosong."
+        );
+
+        return;
+
+    }
+
+
+    const {
+        error
+    } =
+        await supabaseClient
+            .from("tasks")
+            .update({
+
+                nama:
+                    namaBaru.trim()
+
+            })
+            .eq(
+                "id",
+                id
+            )
+            .eq(
+                "user_id",
+                user.id
+            );
+
+
+    if (error) {
+
+        alert(
+            "Gagal edit:\n" +
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    task.nama =
+        namaBaru.trim();
+
+
+    tampilkanTugas();
+
+    updateDashboard();
+
+}
+
+
+// =====================================================
+// HAPUS
+// =====================================================
+
+async function hapusTugas(
+    id
+) {
+
+    const yakin =
+        confirm(
+            "Hapus tugas ini?"
+        );
+
+
+    if (!yakin) {
+        return;
+    }
+
+
+    const {
+        error
+    } =
+        await supabaseClient
+            .from("tasks")
+            .delete()
+            .eq(
+                "id",
+                id
+            )
+            .eq(
+                "user_id",
+                user.id
+            );
+
+
+    if (error) {
+
+        alert(
+            "Gagal menghapus:\n" +
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    tugas =
+        tugas.filter(
+            t =>
+                Number(t.id) !==
+                Number(id)
+        );
+
+
+    tampilkanTugas();
+
+    updateDashboard();
+
+    tampilkanAchievement();
+
+}
+
+
+// =====================================================
+// SEARCH
+// =====================================================
+
+function cariTugas() {
+
+    tampilkanTugas();
+
+}
+
+
+// =====================================================
+// FILTER
+// =====================================================
+
+function filterTugas(
+    filter,
+    tombol
+) {
+
+    filterAktif =
+        filter;
+
+
+    document
+        .querySelectorAll(
+            ".filter"
+        )
+        .forEach(
+            btn => {
+
+                btn.classList.remove(
+                    "active"
+                );
+
+            }
+        );
+
+
+    if (tombol) {
+
+        tombol.classList.add(
+            "active"
+        );
+
+    }
+
+
+    tampilkanTugas();
+
+}
+
+
+// =====================================================
 // DASHBOARD
-// ==========================================
+// =====================================================
 
 function updateDashboard() {
 
     const total =
         tugas.length;
 
+
     const selesai =
         tugas.filter(
-            t => t.selesai
+            t =>
+                t.selesai
         ).length;
+
 
     const belum =
         total - selesai;
+
 
     const persen =
         total === 0
@@ -541,136 +1428,204 @@ function updateDashboard() {
                 (selesai / total) * 100
             );
 
-    const dashTotal =
-        document.getElementById("dashTotal");
 
-    const dashSelesai =
-        document.getElementById("dashSelesai");
+    setText(
+        "dashTotal",
+        total
+    );
 
-    const dashBelum =
-        document.getElementById("dashBelum");
 
-    const progressText =
-        document.getElementById("progressText");
+    setText(
+        "dashSelesai",
+        selesai
+    );
 
-    const progressPercent =
-        document.getElementById("progressPercent");
+
+    setText(
+        "dashBelum",
+        belum
+    );
+
+
+    setText(
+        "progressPercent",
+        persen + "%"
+    );
+
+
+    setText(
+        "progressText",
+        persen + "% selesai"
+    );
+
 
     const progressBar =
-        document.getElementById("progressBar");
+        document.getElementById(
+            "progressBar"
+        );
 
-    if (dashTotal) {
-        dashTotal.textContent = total;
-    }
-
-    if (dashSelesai) {
-        dashSelesai.textContent = selesai;
-    }
-
-    if (dashBelum) {
-        dashBelum.textContent = belum;
-    }
-
-    if (progressText) {
-        progressText.textContent =
-            `${persen}% selesai`;
-    }
-
-    if (progressPercent) {
-        progressPercent.textContent =
-            `${persen}%`;
-    }
 
     if (progressBar) {
+
         progressBar.style.width =
-            `${persen}%`;
+            persen + "%";
+
     }
 
-    updateXP();
-    updateStreakUI();
-    tampilkanDeadline();
-    tampilkanRecent();
-    updateDailyGoal();
-}
 
+    const hariIni =
+        tanggalHariIni();
 
-// ==========================================
-// DAILY GOAL
-// ==========================================
-
-function updateDailyGoal() {
-
-    const today =
-        getTanggalLokal();
 
     const selesaiHariIni =
-        tugas.filter(t => {
+        tugas.filter(
+            t =>
+                t.selesai &&
+                t.selesai_pada ===
+                hariIni
+        ).length;
 
-            if (!t.selesai) {
-                return false;
-            }
 
-            if (!t.selesaiPada) {
-                return false;
-            }
-
-            return t.selesaiPada === today;
-
-        }).length;
-
-    const target = 5;
-
-    const persen =
+    setText(
+        "dailyGoalText",
         Math.min(
-            (selesaiHariIni / target) * 100,
-            100
-        );
+            selesaiHariIni,
+            5
+        ) +
+        " / 5"
+    );
 
-    const text =
-        document.getElementById(
-            "dailyGoalText"
-        );
 
-    const bar =
+    const goalBar =
         document.getElementById(
             "dailyGoalBar"
         );
 
-    const message =
+
+    if (goalBar) {
+
+        goalBar.style.width =
+            Math.min(
+                selesaiHariIni / 5 * 100,
+                100
+            ) +
+            "%";
+
+    }
+
+
+    const goalMessage =
         document.getElementById(
             "dailyGoalMessage"
         );
 
-    if (text) {
-        text.textContent =
-            `${selesaiHariIni} / ${target}`;
-    }
 
-    if (bar) {
-        bar.style.width =
-            `${persen}%`;
-    }
+    if (goalMessage) {
 
-    if (message) {
+        if (
+            selesaiHariIni >= 5
+        ) {
 
-        if (selesaiHariIni >= target) {
-
-            message.textContent =
-                "🎉 Daily Goal tercapai! Gokil bro!";
+            goalMessage.textContent =
+                "🔥 Daily Goal tercapai!";
 
         } else {
 
-            message.textContent =
-                `Tinggal ${target - selesaiHariIni} tugas lagi 🔥`;
+            goalMessage.textContent =
+                "Yuk selesaikan " +
+                (5 - selesaiHariIni) +
+                " tugas lagi 🔥";
 
         }
+
     }
+
+
+    setText(
+        "streakUser",
+        hitungStreak()
+    );
+
+
+    updateXP();
+
+    tampilkanDeadline();
+
+    tampilkanRecent();
+
 }
 
 
-// ==========================================
+// =====================================================
+// XP
+// =====================================================
+
+function updateXP() {
+
+    const selesai =
+        tugas.filter(
+            t =>
+                t.selesai
+        ).length;
+
+
+    const xp =
+        selesai * 20;
+
+
+    const level =
+        Math.floor(
+            xp / 100
+        ) + 1;
+
+
+    const xpLevel =
+        xp % 100;
+
+
+    setText(
+        "levelUser",
+        level
+    );
+
+
+    setText(
+        "levelText",
+        level
+    );
+
+
+    setText(
+        "xpSekarang",
+        xpLevel
+    );
+
+
+    setText(
+        "xpBerikutnya",
+        100
+    );
+
+
+    const bar =
+        document.getElementById(
+            "xpBar"
+        );
+
+
+    if (bar) {
+
+        bar.style.width =
+            xpLevel + "%";
+
+    }
+
+}
+
+
+// =====================================================
 // DEADLINE
-// ==========================================
+// =====================================================
 
 function tampilkanDeadline() {
 
@@ -679,29 +1634,34 @@ function tampilkanDeadline() {
             "deadlineTasks"
         );
 
-    if (!container) return;
 
-    const today =
-        new Date();
+    if (!container) {
+        return;
+    }
 
-    today.setHours(
-        0, 0, 0, 0
-    );
 
-    const deadline =
+    const data =
         tugas
-            .filter(t =>
-                !t.selesai &&
-                t.tanggal
+            .filter(
+                t =>
+                    !t.selesai &&
+                    t.deadline
             )
-            .sort((a, b) =>
-                a.tanggal.localeCompare(
-                    b.tanggal
-                )
+            .sort(
+                (a, b) =>
+                    a.deadline.localeCompare(
+                        b.deadline
+                    )
             )
-            .slice(0, 5);
+            .slice(
+                0,
+                5
+            );
 
-    if (deadline.length === 0) {
+
+    if (
+        data.length === 0
+    ) {
 
         container.innerHTML = `
             <div class="empty">
@@ -710,507 +1670,103 @@ function tampilkanDeadline() {
         `;
 
         return;
+
     }
 
+
     container.innerHTML =
-        deadline.map(t => {
+        data
+            .map(
+                t => `
 
-            const tanggal =
-                new Date(
-                    t.tanggal +
-                    "T00:00:00"
-                );
+                    <div class="recent-item">
 
-            const selisih =
-                Math.ceil(
-                    (
-                        tanggal - today
-                    ) /
-                    (
-                        1000 *
-                        60 *
-                        60 *
-                        24
-                    )
-                );
+                        <strong>
+                            ${escapeHTML(t.nama)}
+                        </strong>
 
-            let icon = "🟢";
-            let teks = "Masih aman";
+                        <small>
+                            📅
+                            ${t.deadline}
+                        </small>
 
-            if (selisih < 0) {
+                    </div>
 
-                icon = "🔴";
-                teks = "Terlambat";
+                `
+            )
+            .join("");
 
-            } else if (selisih === 0) {
-
-                icon = "🔴";
-                teks = "Hari ini";
-
-            } else if (selisih === 1) {
-
-                icon = "🟠";
-                teks = "Besok";
-            }
-
-            return `
-                <div class="recent-item">
-
-                    ${icon}
-
-                    <strong>
-                        ${escapeHTML(t.nama)}
-                    </strong>
-
-                    <small>
-                        — ${formatTanggal(t.tanggal)}
-                        (${teks})
-                    </small>
-
-                </div>
-            `;
-
-        }).join("");
 }
 
 
-// ==========================================
-// RECENT TASK
-// ==========================================
+// =====================================================
+// RECENT
+// =====================================================
 
 function tampilkanRecent() {
 
-    const recent =
+    const container =
         document.getElementById(
             "recentTasks"
         );
 
-    if (!recent) return;
 
-    if (tugas.length === 0) {
+    if (!container) {
+        return;
+    }
 
-        recent.innerHTML = `
+
+    const data =
+        tugas.slice(
+            0,
+            5
+        );
+
+
+    if (
+        data.length === 0
+    ) {
+
+        container.innerHTML = `
             <div class="empty">
                 Belum ada tugas 😴
             </div>
         `;
 
         return;
+
     }
 
-    recent.innerHTML =
-        tugas
-            .slice(0, 5)
-            .map(t => `
 
-                <div class="recent-item">
+    container.innerHTML =
+        data
+            .map(
+                t => `
 
-                    ${t.selesai ? "✅" : "⏳"}
+                    <div class="recent-item">
 
-                    <strong>
-                        ${escapeHTML(t.nama)}
-                    </strong>
+                        <strong>
+                            ${
+                                t.selesai
+                                    ? "✅"
+                                    : "⏳"
+                            }
 
-                    ${
-                        t.tanggal
-                        ? `
-                            <small>
-                                — ${formatTanggal(t.tanggal)}
-                            </small>
-                        `
-                        : ""
-                    }
+                            ${escapeHTML(t.nama)}
+                        </strong>
 
-                </div>
+                    </div>
 
-            `)
+                `
+            )
             .join("");
+
 }
 
 
-// ==========================================
-// KALENDER
-// ==========================================
-
-function lihatTanggal() {
-
-    const input =
-        document.getElementById(
-            "calendarDate"
-        );
-
-    const result =
-        document.getElementById(
-            "calendarResult"
-        );
-
-    if (!input || !result) return;
-
-    const tanggal =
-        input.value;
-
-    if (!tanggal) {
-
-        result.innerHTML =
-            "Pilih tanggal dulu bro 📅";
-
-        return;
-    }
-
-    const hasil =
-        tugas.filter(
-            t => t.tanggal === tanggal
-        );
-
-    if (hasil.length === 0) {
-
-        result.innerHTML = `
-            Tidak ada tugas pada
-            <strong>
-                ${formatTanggal(tanggal)}
-            </strong>
-            🎉
-        `;
-
-        return;
-    }
-
-    result.innerHTML = `
-
-        <strong>
-            Tugas ${formatTanggal(tanggal)}:
-        </strong>
-
-        <br><br>
-
-        ${hasil.map(t => `
-            ${t.selesai ? "✅" : "⏳"}
-            ${escapeHTML(t.nama)}
-            <br>
-        `).join("")}
-    `;
-}
-
-
-// ==========================================
-// CATATAN
-// ==========================================
-
-function simpanCatatan() {
-
-    const textarea =
-        document.getElementById("notes");
-
-    if (!textarea) return;
-
-    localStorage.setItem(
-        "catatanFandy",
-        textarea.value
-    );
-
-    const status =
-        document.getElementById(
-            "noteStatus"
-        );
-
-    if (status) {
-
-        status.textContent =
-            "✓ Catatan tersimpan";
-
-        setTimeout(() => {
-
-            status.textContent =
-                "Tersimpan otomatis";
-
-        }, 2000);
-    }
-}
-
-
-function loadCatatan() {
-
-    const textarea =
-        document.getElementById("notes");
-
-    if (!textarea) return;
-
-    textarea.value =
-        localStorage.getItem(
-            "catatanFandy"
-        ) || "";
-
-    textarea.addEventListener(
-        "input",
-        () => {
-
-            localStorage.setItem(
-                "catatanFandy",
-                textarea.value
-            );
-
-            const status =
-                document.getElementById(
-                    "noteStatus"
-                );
-
-            if (status) {
-                status.textContent =
-                    "✓ Tersimpan";
-            }
-        }
-    );
-}
-
-
-// ==========================================
-// POMODORO
-// ==========================================
-
-function updateTimer() {
-
-    const menit =
-        Math.floor(waktu / 60);
-
-    const detik =
-        waktu % 60;
-
-    const timerElement =
-        document.getElementById("timer");
-
-    if (timerElement) {
-
-        timerElement.textContent =
-            `${String(menit).padStart(2, "0")}:` +
-            `${String(detik).padStart(2, "0")}`;
-    }
-
-    if (waktu <= 0) {
-
-        clearInterval(timer);
-
-        timer = null;
-
-        sedangBerjalan = false;
-
-        alert(
-            "Waktu fokus selesai! 🔥"
-        );
-
-        waktu = 25 * 60;
-
-        updateTimer();
-    }
-}
-
-
-function mulaiTimer() {
-
-    if (sedangBerjalan) return;
-
-    sedangBerjalan = true;
-
-    timer = setInterval(() => {
-
-        waktu--;
-
-        updateTimer();
-
-    }, 1000);
-}
-
-
-function pauseTimer() {
-
-    clearInterval(timer);
-
-    timer = null;
-
-    sedangBerjalan = false;
-}
-
-
-function resetTimer() {
-
-    clearInterval(timer);
-
-    timer = null;
-
-    sedangBerjalan = false;
-
-    waktu = 25 * 60;
-
-    updateTimer();
-}
-
-
-// ==========================================
-// NAMA
-// ==========================================
-
-function simpanNama() {
-
-    const input =
-        document.getElementById(
-            "namaUser"
-        );
-
-    if (!input) return;
-
-    const nama =
-        input.value.trim();
-
-    if (!nama) {
-
-        alert(
-            "Isi nama dulu bro 😭"
-        );
-
-        return;
-    }
-
-    localStorage.setItem(
-        "namaFandy",
-        nama
-    );
-
-    const dashboard =
-        document.getElementById(
-            "namaDashboard"
-        );
-
-    const intro =
-        document.getElementById(
-            "introName"
-        );
-
-    if (dashboard) {
-        dashboard.textContent = nama;
-    }
-
-    if (intro) {
-        intro.textContent = nama;
-    }
-
-    alert(
-        "Nama berhasil disimpan 🔥"
-    );
-}
-
-
-function loadNama() {
-
-    const nama =
-        localStorage.getItem(
-            "namaFandy"
-        ) || "Fandy";
-
-    const input =
-        document.getElementById(
-            "namaUser"
-        );
-
-    const dashboard =
-        document.getElementById(
-            "namaDashboard"
-        );
-
-    const intro =
-        document.getElementById(
-            "introName"
-        );
-
-    if (input) {
-        input.value = nama;
-    }
-
-    if (dashboard) {
-        dashboard.textContent = nama;
-    }
-
-    if (intro) {
-        intro.textContent = nama;
-    }
-}
-
-
-// ==========================================
-// TEMA
-// ==========================================
-
-function toggleTema() {
-
-    document.body.classList.toggle(
-        "light"
-    );
-
-    const light =
-        document.body.classList.contains(
-            "light"
-        );
-
-    localStorage.setItem(
-        "temaFandy",
-        light ? "light" : "dark"
-    );
-}
-
-
-function loadTema() {
-
-    const tema =
-        localStorage.getItem(
-            "temaFandy"
-        );
-
-    if (tema === "light") {
-
-        document.body.classList.add(
-            "light"
-        );
-    }
-}
-
-
-// ==========================================
-// HAPUS SEMUA
-// ==========================================
-
-function hapusSemuaTugas() {
-
-    if (tugas.length === 0) {
-
-        alert(
-            "Belum ada tugas yang bisa dihapus 😭"
-        );
-
-        return;
-    }
-
-    const yakin =
-        confirm(
-            "Yakin mau hapus SEMUA tugas?"
-        );
-
-    if (!yakin) return;
-
-    tugas = [];
-
-    simpanTugas();
-
-    tampilkanTugas();
-    updateDashboard();
-    tampilkanAchievement();
-
-    alert(
-        "Semua tugas berhasil dihapus 🗑️"
-    );
-}
-
-
-// ==========================================
+// =====================================================
 // ACHIEVEMENT
-// ==========================================
+// =====================================================
 
 function tampilkanAchievement() {
 
@@ -1219,121 +1775,574 @@ function tampilkanAchievement() {
             "achievementList"
         );
 
-    if (!container) return;
 
-    const totalSelesai =
+    if (!container) {
+        return;
+    }
+
+
+    const jumlah =
         tugas.filter(
-            t => t.selesai
+            t =>
+                t.selesai
         ).length;
+
 
     const achievements = [
 
         {
-            icon: "🌱",
-            nama: "First Step",
-            deskripsi: "Buat tugas pertama",
-            unlocked: tugas.length >= 1
+            nama:
+                "🌱 Pemula",
+
+            syarat:
+                1,
+
+            text:
+                "Selesaikan 1 tugas"
         },
 
         {
-            icon: "✅",
-            nama: "5 Tasks",
-            deskripsi: "Selesaikan 5 tugas",
-            unlocked: totalSelesai >= 5
+            nama:
+                "🔥 Rajin",
+
+            syarat:
+                5,
+
+            text:
+                "Selesaikan 5 tugas"
         },
 
         {
-            icon: "🔥",
-            nama: "Streak 3",
-            deskripsi: "Capai streak 3 hari",
-            unlocked: streak >= 3
+            nama:
+                "🏆 Produktif",
+
+            syarat:
+                10,
+
+            text:
+                "Selesaikan 10 tugas"
         },
 
         {
-            icon: "🚀",
-            nama: "Level 2",
-            deskripsi: "Capai Level 2",
-            unlocked: xp >= 100
-        },
+            nama:
+                "👑 Master",
 
-        {
-            icon: "🏆",
-            nama: "10 Tasks",
-            deskripsi: "Selesaikan 10 tugas",
-            unlocked: totalSelesai >= 10
-        },
+            syarat:
+                25,
 
-        {
-            icon: "💎",
-            nama: "25 Tasks",
-            deskripsi: "Selesaikan 25 tugas",
-            unlocked: totalSelesai >= 25
+            text:
+                "Selesaikan 25 tugas"
         }
 
     ];
 
+
     container.innerHTML =
-        achievements.map(a => `
+        achievements
+            .map(
+                a => `
 
-            <div class="achievement-card ${
-                a.unlocked
-                    ? "unlocked"
-                    : "locked"
-            }">
+                    <div
+                        class="
+                            achievement-card
+                            ${
+                                jumlah >= a.syarat
+                                    ? "unlocked"
+                                    : ""
+                            }
+                        "
+                    >
 
-                <div class="achievement-icon">
-                    ${
-                        a.unlocked
-                            ? a.icon
-                            : "🔒"
-                    }
-                </div>
+                        <h3>
+                            ${a.nama}
+                        </h3>
 
-                <h3>
-                    ${a.nama}
-                </h3>
+                        <p>
+                            ${a.text}
+                        </p>
 
-                <p>
-                    ${a.deskripsi}
-                </p>
+                        <strong>
+                            ${
+                                jumlah >= a.syarat
+                                    ? "✅ Terbuka"
+                                    : "🔒 Terkunci"
+                            }
+                        </strong>
 
-                <span>
-                    ${
-                        a.unlocked
-                            ? "✓ Terbuka"
-                            : "🔒 Terkunci"
-                    }
-                </span>
+                    </div>
 
-            </div>
+                `
+            )
+            .join("");
 
-        `).join("");
 }
 
 
-// ==========================================
-// EXPORT DATA
-// ==========================================
+// =====================================================
+// NAMA
+// =====================================================
+
+async function simpanNama() {
+
+    const input =
+        document.getElementById(
+            "namaUser"
+        );
+
+
+    const namaBaru =
+        input.value.trim();
+
+
+    if (!namaBaru) {
+
+        alert(
+            "Nama tidak boleh kosong."
+        );
+
+        return;
+
+    }
+
+
+    const {
+        error
+    } =
+        await supabaseClient.auth.updateUser({
+
+            data: {
+
+                full_name:
+                    namaBaru
+
+            }
+
+        });
+
+
+    if (error) {
+
+        alert(
+            "Gagal menyimpan nama:\n" +
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    nama =
+        namaBaru;
+
+
+    setText(
+        "namaDashboard",
+        nama
+    );
+
+
+    setText(
+        "introName",
+        nama
+    );
+
+
+    alert(
+        "Nama berhasil disimpan 👍"
+    );
+
+}
+
+
+// =====================================================
+// CATATAN
+// =====================================================
+
+function noteKey() {
+
+    return (
+        "catatanFandy_" +
+        user.id
+    );
+
+}
+
+
+function loadNotes() {
+
+    const notes =
+        document.getElementById(
+            "notes"
+        );
+
+
+    if (!notes) {
+        return;
+    }
+
+
+    notes.value =
+        localStorage.getItem(
+            noteKey()
+        ) ||
+        "";
+
+}
+
+
+function simpanCatatan() {
+
+    const notes =
+        document.getElementById(
+            "notes"
+        );
+
+
+    if (!notes) {
+        return;
+    }
+
+
+    localStorage.setItem(
+        noteKey(),
+        notes.value
+    );
+
+
+    setText(
+        "noteStatus",
+        "Catatan tersimpan ✅"
+    );
+
+}
+
+
+// =====================================================
+// TIMER
+// =====================================================
+
+function mulaiTimer() {
+
+    if (timerInterval) {
+        return;
+    }
+
+
+    timerInterval =
+        setInterval(
+            function () {
+
+                if (
+                    waktu <= 0
+                ) {
+
+                    clearInterval(
+                        timerInterval
+                    );
+
+
+                    timerInterval =
+                        null;
+
+
+                    alert(
+                        "🔥 Waktu fokus selesai!"
+                    );
+
+
+                    return;
+
+                }
+
+
+                waktu--;
+
+                updateTimer();
+
+            },
+            1000
+        );
+
+}
+
+
+function pauseTimer() {
+
+    clearInterval(
+        timerInterval
+    );
+
+
+    timerInterval =
+        null;
+
+}
+
+
+function resetTimer() {
+
+    clearInterval(
+        timerInterval
+    );
+
+
+    timerInterval =
+        null;
+
+
+    waktu =
+        25 * 60;
+
+
+    updateTimer();
+
+}
+
+
+function updateTimer() {
+
+    const timer =
+        document.getElementById(
+            "timer"
+        );
+
+
+    if (!timer) {
+        return;
+    }
+
+
+    const menit =
+        Math.floor(
+            waktu / 60
+        )
+            .toString()
+            .padStart(
+                2,
+                "0"
+            );
+
+
+    const detik =
+        (waktu % 60)
+            .toString()
+            .padStart(
+                2,
+                "0"
+            );
+
+
+    timer.textContent =
+        `${menit}:${detik}`;
+
+}
+
+
+// =====================================================
+// TEMA
+// =====================================================
+
+function themeKey() {
+
+    return (
+        "temaFandy_" +
+        user.id
+    );
+
+}
+
+
+function toggleTema() {
+
+    document.body.classList.toggle(
+        "light"
+    );
+
+
+    localStorage.setItem(
+        themeKey(),
+        document.body.classList.contains(
+            "light"
+        )
+            ? "light"
+            : "dark"
+    );
+
+}
+
+
+function loadTheme() {
+
+    const tema =
+        localStorage.getItem(
+            themeKey()
+        );
+
+
+    if (
+        tema === "light"
+    ) {
+
+        document.body.classList.add(
+            "light"
+        );
+
+    } else {
+
+        document.body.classList.remove(
+            "light"
+        );
+
+    }
+
+}
+
+
+// =====================================================
+// HAPUS SEMUA
+// =====================================================
+
+async function hapusSemuaTugas() {
+
+    const yakin =
+        confirm(
+            "Yakin mau hapus SEMUA tugas?"
+        );
+
+
+    if (!yakin) {
+        return;
+    }
+
+
+    const {
+        error
+    } =
+        await supabaseClient
+            .from("tasks")
+            .delete()
+            .eq(
+                "user_id",
+                user.id
+            );
+
+
+    if (error) {
+
+        alert(
+            "Gagal menghapus:\n" +
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    tugas = [];
+
+
+    tampilkanTugas();
+
+    updateDashboard();
+
+    tampilkanAchievement();
+
+
+    alert(
+        "Semua tugas berhasil dihapus ✅"
+    );
+
+}
+
+
+// =====================================================
+// KALENDER
+// =====================================================
+
+function lihatTanggal() {
+
+    const date =
+        document.getElementById(
+            "calendarDate"
+        )?.value;
+
+
+    const result =
+        document.getElementById(
+            "calendarResult"
+        );
+
+
+    if (
+        !result ||
+        !date
+    ) {
+        return;
+    }
+
+
+    const hasil =
+        tugas.filter(
+            t =>
+                t.deadline ===
+                date
+        );
+
+
+    if (
+        hasil.length === 0
+    ) {
+
+        result.innerHTML =
+            "Tidak ada tugas di tanggal ini 😎";
+
+        return;
+    }
+
+
+    result.innerHTML =
+        hasil
+            .map(
+                t => `
+
+                    <div>
+                        ${
+                            t.selesai
+                                ? "✅"
+                                : "⏳"
+                        }
+
+                        ${escapeHTML(t.nama)}
+                    </div>
+
+                `
+            )
+            .join("");
+
+}
+
+
+// =====================================================
+// EXPORT
+// =====================================================
 
 function exportData() {
 
     const data = {
 
-        tugas: tugas,
-
-        xp: xp,
-
-        streak: streak,
-
-        lastProductiveDate:
-            lastProductiveDate,
-
         nama:
-            localStorage.getItem(
-                "namaFandy"
-            ) || "Fandy"
+            nama,
+
+        email:
+            user?.email || null,
+
+        tugas:
+            tugas
 
     };
+
 
     const blob =
         new Blob(
@@ -1345,34 +2354,45 @@ function exportData() {
                 )
             ],
             {
-                type: "application/json"
+                type:
+                    "application/json"
             }
         );
 
+
     const url =
-        URL.createObjectURL(blob);
+        URL.createObjectURL(
+            blob
+        );
+
 
     const a =
-        document.createElement("a");
+        document.createElement(
+            "a"
+        );
 
-    a.href = url;
+
+    a.href =
+        url;
+
 
     a.download =
-        "backup-fandy-task-app.json";
+        "fandy-task-backup.json";
 
-    document.body.appendChild(a);
 
     a.click();
 
-    a.remove();
 
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(
+        url
+    );
+
 }
 
 
-// ==========================================
-// IMPORT DATA
-// ==========================================
+// =====================================================
+// IMPORT
+// =====================================================
 
 function importData() {
 
@@ -1381,218 +2401,370 @@ function importData() {
             "input"
         );
 
-    input.type = "file";
 
-    input.accept = ".json";
+    input.type =
+        "file";
 
-    input.onchange = function(event) {
 
-        const file =
-            event.target.files[0];
+    input.accept =
+        ".json";
 
-        if (!file) return;
 
-        const reader =
-            new FileReader();
+    input.onchange =
+        function (event) {
 
-        reader.onload = function(e) {
+            const file =
+                event.target.files[0];
 
-            try {
 
-                const data =
-                    JSON.parse(
-                        e.target.result
-                    );
-
-                if (
-                    !Array.isArray(
-                        data.tugas
-                    )
-                ) {
-
-                    throw new Error(
-                        "Data tugas tidak valid"
-                    );
-                }
-
-                tugas = data.tugas;
-
-                xp =
-                    Number(data.xp) || 0;
-
-                streak =
-                    Number(data.streak) || 0;
-
-                lastProductiveDate =
-                    data.lastProductiveDate || "";
-
-                if (data.nama) {
-
-                    localStorage.setItem(
-                        "namaFandy",
-                        data.nama
-                    );
-                }
-
-                simpanTugas();
-
-                localStorage.setItem(
-                    "xpFandy",
-                    xp
-                );
-
-                localStorage.setItem(
-                    "streakFandy",
-                    streak
-                );
-
-                localStorage.setItem(
-                    "lastProductiveDate",
-                    lastProductiveDate
-                );
-
-                loadNama();
-
-                updateDashboard();
-
-                tampilkanTugas();
-
-                tampilkanAchievement();
-
-                alert(
-                    "Data berhasil di-import! 🔥"
-                );
-
-            } catch (error) {
-
-                console.error(error);
-
-                alert(
-                    "File backup tidak valid 😭"
-                );
+            if (!file) {
+                return;
             }
+
+
+            const reader =
+                new FileReader();
+
+
+            reader.onload =
+                async function () {
+
+                    try {
+
+                        const data =
+                            JSON.parse(
+                                reader.result
+                            );
+
+
+                        const daftar =
+                            Array.isArray(
+                                data.tugas
+                            )
+                                ? data.tugas
+                                : [];
+
+
+                        if (
+                            daftar.length === 0
+                        ) {
+
+                            alert(
+                                "Tidak ada tugas dalam file."
+                            );
+
+                            return;
+
+                        }
+
+
+                        const rows =
+                            daftar.map(
+                                t => ({
+
+                                    user_id:
+                                        user.id,
+
+                                    nama:
+                                        String(
+                                            t.nama || ""
+                                        ),
+
+                                    deadline:
+                                        t.deadline ||
+                                        null,
+
+                                    priority:
+                                        t.priority ||
+                                        "medium",
+
+                                    selesai:
+                                        Boolean(
+                                            t.selesai
+                                        ),
+
+                                    selesai_pada:
+                                        t.selesai_pada ||
+                                        null
+
+                                })
+                            );
+
+
+                        const {
+                            error
+                        } =
+                            await supabaseClient
+                                .from("tasks")
+                                .insert(
+                                    rows
+                                );
+
+
+                        if (error) {
+
+                            alert(
+                                "Import gagal:\n" +
+                                error.message
+                            );
+
+                            return;
+
+                        }
+
+
+                        await ambilTugas();
+
+
+                        alert(
+                            "Data berhasil diimport ✅"
+                        );
+
+                    } catch (error) {
+
+                        console.error(
+                            error
+                        );
+
+
+                        alert(
+                            "File backup tidak valid."
+                        );
+
+                    }
+
+                };
+
+
+            reader.readAsText(
+                file
+            );
+
         };
 
-        reader.readAsText(file);
-    };
 
     input.click();
+
 }
 
 
-// ==========================================
-// TANGGAL
-// ==========================================
+// =====================================================
+// STREAK
+// =====================================================
 
-function tampilkanTanggal() {
+function hitungStreak() {
 
-    const element =
-        document.getElementById(
-            "tanggalHariIni"
+    const tanggal =
+        [
+            ...new Set(
+
+                tugas
+                    .filter(
+                        t =>
+                            t.selesai &&
+                            t.selesai_pada
+                    )
+                    .map(
+                        t =>
+                            t.selesai_pada
+                    )
+
+            )
+        ].sort(
+            (a, b) =>
+                b.localeCompare(a)
         );
 
-    if (!element) return;
 
-    const sekarang =
+    if (
+        tanggal.length === 0
+    ) {
+
+        return 0;
+
+    }
+
+
+    const today =
         new Date();
 
-    element.textContent =
-        sekarang.toLocaleDateString(
-            "id-ID",
-            {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                year: "numeric"
-            }
-        );
-}
 
-
-function formatTanggal(tanggal) {
-
-    if (!tanggal) return "";
-
-    return new Date(
-        tanggal + "T00:00:00"
-    ).toLocaleDateString(
-        "id-ID",
-        {
-            day: "numeric",
-            month: "long",
-            year: "numeric"
-        }
+    today.setHours(
+        0,
+        0,
+        0,
+        0
     );
+
+
+    let streak =
+        0;
+
+
+    for (
+        let i = 0;
+        i < tanggal.length;
+        i++
+    ) {
+
+        const expected =
+            new Date(
+                today
+            );
+
+
+        expected.setDate(
+            today.getDate() - i
+        );
+
+
+        const expectedString =
+            formatDate(
+                expected
+            );
+
+
+        if (
+            tanggal.includes(
+                expectedString
+            )
+        ) {
+
+            streak++;
+
+        } else {
+
+            break;
+
+        }
+
+    }
+
+
+    return streak;
+
 }
 
 
-// ==========================================
-// SECURITY
-// ==========================================
+// =====================================================
+// HELPERS
+// =====================================================
 
-function escapeHTML(text) {
+function setText(
+    id,
+    value
+) {
+
+    const el =
+        document.getElementById(
+            id
+        );
+
+
+    if (el) {
+
+        el.textContent =
+            value;
+
+    }
+
+}
+
+
+function tanggalHariIni() {
+
+    return formatDate(
+        new Date()
+    );
+
+}
+
+
+function formatDate(
+    date
+) {
+
+    const tahun =
+        date.getFullYear();
+
+
+    const bulan =
+        String(
+            date.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        );
+
+
+    const hari =
+        String(
+            date.getDate()
+        ).padStart(
+            2,
+            "0"
+        );
+
+
+    return (
+        tahun +
+        "-" +
+        bulan +
+        "-" +
+        hari
+    );
+
+}
+
+
+function escapeHTML(
+    text
+) {
 
     const div =
         document.createElement(
             "div"
         );
 
-    div.textContent = text;
+
+    div.textContent =
+        text;
+
 
     return div.innerHTML;
+
 }
 
 
-// ==========================================
-// INTRO
-// ==========================================
+function tampilkanTanggal() {
 
-function jalankanIntro() {
-
-    const intro =
+    const tanggal =
         document.getElementById(
-            "intro"
+            "tanggalHariIni"
         );
 
-    if (!intro) return;
 
-    setTimeout(() => {
-
-        intro.classList.add("hide");
-
-    }, 2200);
-}
-
-
-// ==========================================
-// LOAD APP
-// ==========================================
-
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
-
-        loadNama();
-
-        loadTema();
-
-        loadCatatan();
-
-        tampilkanTanggal();
-
-        updateTimer();
-
-        updateXP();
-
-        updateStreakUI();
-
-        tampilkanTugas();
-
-        updateDashboard();
-
-        tampilkanAchievement();
-
-        jalankanIntro();
-
+    if (!tanggal) {
+        return;
     }
-);
+
+
+    tanggal.textContent =
+        new Date().toLocaleDateString(
+            "id-ID",
+            {
+                weekday:
+                    "long",
+
+                year:
+                    "numeric",
+
+                month:
+                    "long",
+
+                day:
+                    "numeric"
+            }
+        );
+
+}

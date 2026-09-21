@@ -1,97 +1,298 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fandy Task App V5</title>
+
+    <title>Fandy Task App</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div class="background">
-    <div class="glow glow-1"></div>
-    <div class="glow glow-2"></div>
-    <div class="particles"></div>
+<!-- =========================
+     LOGIN / REGISTER
+========================= -->
+
+<div id="authScreen">
+
+    <div class="auth-box">
+
+        <div class="auth-logo">🚀</div>
+
+        <h1>Fandy Task App</h1>
+
+        <p id="authTitle">
+            Login ke akun kamu
+        </p>
+
+
+        <!-- LOGIN -->
+
+        <div id="loginForm">
+
+            <input
+                type="email"
+                id="loginEmail"
+                placeholder="Email"
+                autocomplete="email"
+            >
+
+            <input
+                type="password"
+                id="loginPassword"
+                placeholder="Password"
+                autocomplete="current-password"
+            >
+
+            <button
+                class="primary-btn"
+                onclick="loginUser()"
+            >
+                🔐 Login
+            </button>
+
+            <p
+                id="loginMessage"
+                class="message"
+            ></p>
+
+            <div class="switch-auth">
+
+                Belum punya akun?
+
+                <button
+                    onclick="showRegister()"
+                >
+                    Daftar
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- REGISTER -->
+
+        <div
+            id="registerForm"
+            style="display:none;"
+        >
+
+            <input
+                type="text"
+                id="registerName"
+                placeholder="Nama"
+            >
+
+            <input
+                type="email"
+                id="registerEmail"
+                placeholder="Email"
+                autocomplete="email"
+            >
+
+            <input
+                type="password"
+                id="registerPassword"
+                placeholder="Password minimal 6 karakter"
+                autocomplete="new-password"
+            >
+
+            <button
+                class="primary-btn"
+                onclick="registerUser()"
+            >
+                📝 Daftar
+            </button>
+
+            <p
+                id="registerMessage"
+                class="message"
+            ></p>
+
+            <div class="switch-auth">
+
+                Sudah punya akun?
+
+                <button
+                    onclick="showLogin()"
+                >
+                    Login
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
 </div>
 
-<!-- INTRO -->
+
+
+<!-- =========================
+     INTRO
+========================= -->
+
 <div id="intro">
+
     <div class="intro-content">
-        <div class="wave">👋</div>
-        <h1>Selamat datang, <span id="introName">Fandy</span>!</h1>
-        <p>Siap beresin semua tugas hari ini?</p>
-        <div class="loading"><span></span></div>
+
+        <div class="wave">
+            👋
+        </div>
+
+        <h1>
+            Selamat datang,
+            <span id="introName">
+                Fandy
+            </span>!
+        </h1>
+
+        <p>
+            Siap beresin semua tugas hari ini?
+        </p>
+
+        <div class="loading">
+            <span></span>
+        </div>
+
     </div>
+
 </div>
+
+
+
+<!-- =========================
+     APP
+========================= -->
 
 <div class="app">
 
     <!-- SIDEBAR -->
+
     <aside class="sidebar">
 
         <div class="logo">
             🚀 <span>Fandy App</span>
         </div>
 
-        <button class="menu active" onclick="bukaMenu('dashboard', this)">
+
+        <button
+            class="menu active"
+            onclick="bukaMenu('dashboard', this)"
+        >
             🏠 Dashboard
         </button>
 
-        <button class="menu" onclick="bukaMenu('tugas', this)">
+
+        <button
+            class="menu"
+            onclick="bukaMenu('tugas', this)"
+        >
             📋 Tugas
         </button>
 
-        <button class="menu" onclick="bukaMenu('kalender', this)">
+
+        <button
+            class="menu"
+            onclick="bukaMenu('kalender', this)"
+        >
             📅 Kalender
         </button>
 
-        <button class="menu" onclick="bukaMenu('catatan', this)">
+
+        <button
+            class="menu"
+            onclick="bukaMenu('catatan', this)"
+        >
             📝 Catatan
         </button>
 
-        <button class="menu" onclick="bukaMenu('fokus', this)">
+
+        <button
+            class="menu"
+            onclick="bukaMenu('fokus', this)"
+        >
             ⏱️ Fokus
         </button>
 
-        <button class="menu" onclick="bukaMenu('achievement', this)">
+
+        <button
+            class="menu"
+            onclick="bukaMenu('achievement', this)"
+        >
             🏆 Achievement
         </button>
 
-        <button class="menu" onclick="bukaMenu('pengaturan', this)">
+
+        <button
+            class="menu"
+            onclick="bukaMenu('pengaturan', this)"
+        >
             ⚙️ Pengaturan
         </button>
 
     </aside>
 
 
+
     <!-- MAIN -->
+
     <main class="main">
 
-        <!-- DASHBOARD -->
-        <section id="dashboard" class="page active">
+
+        <!-- =========================
+             DASHBOARD
+        ========================== -->
+
+        <section
+            id="dashboard"
+            class="page active"
+        >
 
             <div class="top">
+
                 <div>
-                    <p class="small">Selamat datang kembali 👋</p>
+
+                    <p class="small">
+                        Selamat datang kembali 👋
+                    </p>
 
                     <h1>
-                        Halo, <span id="namaDashboard">Fandy</span>!
+                        Halo,
+                        <span id="namaDashboard">
+                            Fandy
+                        </span>!
                     </h1>
 
                     <p id="tanggalHariIni"></p>
+
                 </div>
+
 
                 <div class="level-card">
 
                     <div class="level-badge">
-                        LVL <span id="levelUser">1</span>
+
+                        LVL
+                        <span id="levelUser">
+                            1
+                        </span>
+
                     </div>
+
 
                     <div class="level-info">
 
                         <strong>
-                            Level <span id="levelText">1</span>
+                            Level
+                            <span id="levelText">
+                                1
+                            </span>
                         </strong>
 
                         <div class="xp-bar">
@@ -99,8 +300,19 @@
                         </div>
 
                         <small>
-                            <span id="xpSekarang">0</span> /
-                            <span id="xpBerikutnya">100</span> XP
+
+                            <span id="xpSekarang">
+                                0
+                            </span>
+
+                            /
+
+                            <span id="xpBerikutnya">
+                                100
+                            </span>
+
+                            XP
+
                         </small>
 
                     </div>
@@ -110,44 +322,95 @@
             </div>
 
 
-            <!-- STATS -->
+
             <div class="stats">
 
                 <div class="card">
-                    <div class="icon">📋</div>
-                    <h3>Total Tugas</h3>
-                    <strong id="dashTotal">0</strong>
-                </div>
 
-                <div class="card">
-                    <div class="icon">✅</div>
-                    <h3>Selesai</h3>
-                    <strong id="dashSelesai">0</strong>
-                </div>
+                    <div class="icon">
+                        📋
+                    </div>
 
-                <div class="card">
-                    <div class="icon">⏳</div>
-                    <h3>Belum Selesai</h3>
-                    <strong id="dashBelum">0</strong>
-                </div>
+                    <h3>
+                        Total Tugas
+                    </h3>
 
-                <div class="card streak-card">
-                    <div class="icon">🔥</div>
-                    <h3>Streak</h3>
-                    <strong>
-                        <span id="streakUser">0</span> hari
+                    <strong id="dashTotal">
+                        0
                     </strong>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="icon">
+                        ✅
+                    </div>
+
+                    <h3>
+                        Selesai
+                    </h3>
+
+                    <strong id="dashSelesai">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="icon">
+                        ⏳
+                    </div>
+
+                    <h3>
+                        Belum Selesai
+                    </h3>
+
+                    <strong id="dashBelum">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="icon">
+                        🔥
+                    </div>
+
+                    <h3>
+                        Streak
+                    </h3>
+
+                    <strong>
+                        <span id="streakUser">
+                            0
+                        </span>
+                        hari
+                    </strong>
+
                 </div>
 
             </div>
 
 
-            <!-- DAILY GOAL -->
-            <div class="card daily-goal">
+
+            <div class="card">
 
                 <div class="section-title">
-                    <h2>🎯 Daily Goal</h2>
-                    <span id="dailyGoalText">0 / 5</span>
+
+                    <h2>
+                        🎯 Daily Goal
+                    </h2>
+
+                    <span id="dailyGoalText">
+                        0 / 5
+                    </span>
+
                 </div>
 
                 <div class="big-progress">
@@ -161,15 +424,19 @@
             </div>
 
 
-            <!-- PROGRESS -->
+
             <div class="card">
 
                 <div class="section-title">
-                    <h2>📊 Progress</h2>
+
+                    <h2>
+                        📊 Progress
+                    </h2>
 
                     <strong id="progressPercent">
                         0%
                     </strong>
+
                 </div>
 
                 <div class="big-progress">
@@ -183,40 +450,46 @@
             </div>
 
 
-            <!-- DEADLINE -->
+
             <div class="card">
 
-                <h2>🔔 Deadline Terdekat</h2>
+                <h2>
+                    🔔 Deadline Terdekat
+                </h2>
 
-                <div id="deadlineTasks">
-                    <div class="empty">
-                        Tidak ada deadline 🎉
-                    </div>
-                </div>
+                <div id="deadlineTasks"></div>
 
             </div>
 
 
-            <!-- RECENT -->
+
             <div class="card">
 
-                <h2>🕒 Tugas Terbaru</h2>
+                <h2>
+                    🕒 Tugas Terbaru
+                </h2>
 
-                <div id="recentTasks">
-                    <div class="empty">
-                        Belum ada tugas 😴
-                    </div>
-                </div>
+                <div id="recentTasks"></div>
 
             </div>
 
         </section>
 
 
-        <!-- TUGAS -->
-        <section id="tugas" class="page">
 
-            <h1>📋 Daftar Tugas</h1>
+        <!-- =========================
+             TUGAS
+        ========================== -->
+
+        <section
+            id="tugas"
+            class="page"
+        >
+
+            <h1>
+                📋 Daftar Tugas
+            </h1>
+
 
             <div class="task-form">
 
@@ -237,7 +510,10 @@
                         Low
                     </option>
 
-                    <option value="medium" selected>
+                    <option
+                        value="medium"
+                        selected
+                    >
                         Medium
                     </option>
 
@@ -272,19 +548,22 @@
 
                 <button
                     class="filter active"
-                    onclick="filterTugas('semua', this)">
+                    onclick="filterTugas('semua', this)"
+                >
                     Semua
                 </button>
 
                 <button
                     class="filter"
-                    onclick="filterTugas('belum', this)">
+                    onclick="filterTugas('belum', this)"
+                >
                     Belum
                 </button>
 
                 <button
                     class="filter"
-                    onclick="filterTugas('selesai', this)">
+                    onclick="filterTugas('selesai', this)"
+                >
                     Selesai
                 </button>
 
@@ -296,10 +575,19 @@
         </section>
 
 
-        <!-- KALENDER -->
-        <section id="kalender" class="page">
 
-            <h1>📅 Kalender</h1>
+        <!-- =========================
+             KALENDER
+        ========================== -->
+
+        <section
+            id="kalender"
+            class="page"
+        >
+
+            <h1>
+                📅 Kalender
+            </h1>
 
             <div class="card">
 
@@ -314,18 +602,27 @@
 
                 <div
                     id="calendarResult"
-                    class="calendar-result">
-                </div>
+                    class="calendar-result"
+                ></div>
 
             </div>
 
         </section>
 
 
-        <!-- CATATAN -->
-        <section id="catatan" class="page">
 
-            <h1>📝 Catatan</h1>
+        <!-- =========================
+             CATATAN
+        ========================== -->
+
+        <section
+            id="catatan"
+            class="page"
+        >
+
+            <h1>
+                📝 Catatan
+            </h1>
 
             <div class="card">
 
@@ -339,7 +636,7 @@
                 </button>
 
                 <p id="noteStatus">
-                    Tersimpan otomatis
+                    Catatan tersimpan di perangkat ini
                 </p>
 
             </div>
@@ -347,10 +644,19 @@
         </section>
 
 
-        <!-- FOKUS -->
-        <section id="fokus" class="page">
 
-            <h1>⏱️ Mode Fokus</h1>
+        <!-- =========================
+             FOKUS
+        ========================== -->
+
+        <section
+            id="fokus"
+            class="page"
+        >
+
+            <h1>
+                ⏱️ Mode Fokus
+            </h1>
 
             <div class="focus-card">
 
@@ -379,10 +685,19 @@
         </section>
 
 
-        <!-- ACHIEVEMENT -->
-        <section id="achievement" class="page">
 
-            <h1>🏆 Achievement</h1>
+        <!-- =========================
+             ACHIEVEMENT
+        ========================== -->
+
+        <section
+            id="achievement"
+            class="page"
+        >
+
+            <h1>
+                🏆 Achievement
+            </h1>
 
             <p>
                 Kumpulkan badge dengan menyelesaikan tugas!
@@ -390,20 +705,32 @@
 
             <div
                 id="achievementList"
-                class="achievement-grid">
-            </div>
+                class="achievement-grid"
+            ></div>
 
         </section>
 
 
-        <!-- PENGATURAN -->
-        <section id="pengaturan" class="page">
 
-            <h1>⚙️ Pengaturan</h1>
+        <!-- =========================
+             PENGATURAN
+        ========================== -->
+
+        <section
+            id="pengaturan"
+            class="page"
+        >
+
+            <h1>
+                ⚙️ Pengaturan
+            </h1>
+
 
             <div class="card">
 
-                <h2>👤 Nama</h2>
+                <h2>
+                    👤 Nama
+                </h2>
 
                 <input
                     id="namaUser"
@@ -420,7 +747,9 @@
 
             <div class="card">
 
-                <h2>🎨 Tampilan</h2>
+                <h2>
+                    🎨 Tampilan
+                </h2>
 
                 <button onclick="toggleTema()">
                     🌙 / ☀️ Ganti Tema
@@ -431,20 +760,43 @@
 
             <div class="card">
 
-                <h2>💾 Data</h2>
+                <h2>
+                    💾 Data
+                </h2>
 
                 <button onclick="exportData()">
-                    📤 Export Data
+                    📤 Export
                 </button>
 
                 <button onclick="importData()">
-                    📥 Import Data
+                    📥 Import
                 </button>
 
                 <button
                     class="danger"
-                    onclick="hapusSemuaTugas()">
+                    onclick="hapusSemuaTugas()"
+                >
                     🗑️ Hapus Semua Tugas
+                </button>
+
+            </div>
+
+
+            <div class="card">
+
+                <h2>
+                    🔐 Akun
+                </h2>
+
+                <p id="akunEmail">
+                    -
+                </p>
+
+                <button
+                    class="logout-btn"
+                    onclick="logoutUser()"
+                >
+                    🚪 Logout
                 </button>
 
             </div>
@@ -455,6 +807,10 @@
 
 </div>
 
+
+<!-- SUPABASE HARUS DI ATAS APP.JS -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script src="app.js"></script>
 
