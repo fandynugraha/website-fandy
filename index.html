@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,7 +26,6 @@
         <p id="authTitle">
             Login ke akun kamu
         </p>
-
 
         <!-- LOGIN -->
 
@@ -63,9 +61,7 @@
 
                 Belum punya akun?
 
-                <button
-                    onclick="showRegister()"
-                >
+                <button onclick="showRegister()">
                     Daftar
                 </button>
 
@@ -117,9 +113,7 @@
 
                 Sudah punya akun?
 
-                <button
-                    onclick="showLogin()"
-                >
+                <button onclick="showLogin()">
                     Login
                 </button>
 
@@ -130,7 +124,6 @@
     </div>
 
 </div>
-
 
 
 <!-- =========================
@@ -165,7 +158,6 @@
 </div>
 
 
-
 <!-- =========================
      APP
 ========================= -->
@@ -180,14 +172,12 @@
             🚀 <span>Fandy App</span>
         </div>
 
-
         <button
             class="menu active"
             onclick="bukaMenu('dashboard', this)"
         >
             🏠 Dashboard
         </button>
-
 
         <button
             class="menu"
@@ -196,14 +186,12 @@
             📋 Tugas
         </button>
 
-
         <button
             class="menu"
             onclick="bukaMenu('kalender', this)"
         >
             📅 Kalender
         </button>
-
 
         <button
             class="menu"
@@ -212,7 +200,6 @@
             📝 Catatan
         </button>
 
-
         <button
             class="menu"
             onclick="bukaMenu('fokus', this)"
@@ -220,14 +207,12 @@
             ⏱️ Fokus
         </button>
 
-
         <button
             class="menu"
             onclick="bukaMenu('achievement', this)"
         >
             🏆 Achievement
         </button>
-
 
         <button
             class="menu"
@@ -239,15 +224,12 @@
     </aside>
 
 
-
     <!-- MAIN -->
 
     <main class="main">
 
 
-        <!-- =========================
-             DASHBOARD
-        ========================== -->
+        <!-- DASHBOARD -->
 
         <section
             id="dashboard"
@@ -277,14 +259,11 @@
                 <div class="level-card">
 
                     <div class="level-badge">
-
                         LVL
                         <span id="levelUser">
                             1
                         </span>
-
                     </div>
-
 
                     <div class="level-info">
 
@@ -300,19 +279,14 @@
                         </div>
 
                         <small>
-
                             <span id="xpSekarang">
                                 0
                             </span>
-
                             /
-
                             <span id="xpBerikutnya">
                                 100
                             </span>
-
                             XP
-
                         </small>
 
                     </div>
@@ -322,18 +296,13 @@
             </div>
 
 
-
             <div class="stats">
 
                 <div class="card">
 
-                    <div class="icon">
-                        📋
-                    </div>
+                    <div class="icon">📋</div>
 
-                    <h3>
-                        Total Tugas
-                    </h3>
+                    <h3>Total Tugas</h3>
 
                     <strong id="dashTotal">
                         0
@@ -344,13 +313,9 @@
 
                 <div class="card">
 
-                    <div class="icon">
-                        ✅
-                    </div>
+                    <div class="icon">✅</div>
 
-                    <h3>
-                        Selesai
-                    </h3>
+                    <h3>Selesai</h3>
 
                     <strong id="dashSelesai">
                         0
@@ -361,13 +326,9 @@
 
                 <div class="card">
 
-                    <div class="icon">
-                        ⏳
-                    </div>
+                    <div class="icon">⏳</div>
 
-                    <h3>
-                        Belum Selesai
-                    </h3>
+                    <h3>Belum Selesai</h3>
 
                     <strong id="dashBelum">
                         0
@@ -378,13 +339,9 @@
 
                 <div class="card">
 
-                    <div class="icon">
-                        🔥
-                    </div>
+                    <div class="icon">🔥</div>
 
-                    <h3>
-                        Streak
-                    </h3>
+                    <h3>Streak</h3>
 
                     <strong>
                         <span id="streakUser">
@@ -398,14 +355,11 @@
             </div>
 
 
-
             <div class="card">
 
                 <div class="section-title">
 
-                    <h2>
-                        🎯 Daily Goal
-                    </h2>
+                    <h2>🎯 Daily Goal</h2>
 
                     <span id="dailyGoalText">
                         0 / 5
@@ -414,7 +368,9 @@
                 </div>
 
                 <div class="big-progress">
+
                     <div id="dailyGoalBar"></div>
+
                 </div>
 
                 <p id="dailyGoalMessage">
@@ -424,14 +380,11 @@
             </div>
 
 
-
             <div class="card">
 
                 <div class="section-title">
 
-                    <h2>
-                        📊 Progress
-                    </h2>
+                    <h2>📊 Progress</h2>
 
                     <strong id="progressPercent">
                         0%
@@ -440,7 +393,9 @@
                 </div>
 
                 <div class="big-progress">
+
                     <div id="progressBar"></div>
+
                 </div>
 
                 <p id="progressText">
@@ -448,7 +403,6 @@
                 </p>
 
             </div>
-
 
 
             <div class="card">
@@ -460,7 +414,6 @@
                 <div id="deadlineTasks"></div>
 
             </div>
-
 
 
             <div class="card">
@@ -476,10 +429,7 @@
         </section>
 
 
-
-        <!-- =========================
-             TUGAS
-        ========================== -->
+        <!-- TUGAS -->
 
         <section
             id="tugas"
@@ -575,10 +525,7 @@
         </section>
 
 
-
-        <!-- =========================
-             KALENDER
-        ========================== -->
+        <!-- KALENDER -->
 
         <section
             id="kalender"
@@ -610,10 +557,7 @@
         </section>
 
 
-
-        <!-- =========================
-             CATATAN
-        ========================== -->
+        <!-- CATATAN -->
 
         <section
             id="catatan"
@@ -644,10 +588,7 @@
         </section>
 
 
-
-        <!-- =========================
-             FOKUS
-        ========================== -->
+        <!-- FOKUS -->
 
         <section
             id="fokus"
@@ -685,10 +626,7 @@
         </section>
 
 
-
-        <!-- =========================
-             ACHIEVEMENT
-        ========================== -->
+        <!-- ACHIEVEMENT -->
 
         <section
             id="achievement"
@@ -711,10 +649,7 @@
         </section>
 
 
-
-        <!-- =========================
-             PENGATURAN
-        ========================== -->
+        <!-- PENGATURAN -->
 
         <section
             id="pengaturan"
@@ -808,7 +743,7 @@
 </div>
 
 
-<!-- SUPABASE HARUS DI ATAS APP.JS -->
+<!-- SUPABASE -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
