@@ -1,13 +1,8 @@
-// =====================================================
-// SUPABASE
-// =====================================================
-
 const SUPABASE_URL =
     "https://frlipbvpxvmaiirvpwec.supabase.co";
 
 const SUPABASE_PUBLISHABLE_KEY =
     "sb_publishable_7pEnNAunj6-93AXf5uT1mg_N__inABq";
-
 
 const supabaseClient =
     window.supabase.createClient(
@@ -15,65 +10,46 @@ const supabaseClient =
         SUPABASE_PUBLISHABLE_KEY
     );
 
-
-// =====================================================
-// GLOBAL
-// =====================================================
-
 let user = null;
-
 let tugas = [];
-
 let nama = "Fandy";
-
 let filterAktif = "semua";
-
 let timerInterval = null;
-
 let waktu = 25 * 60;
 
 
-// =====================================================
+// =========================
 // START
-// =====================================================
+// =========================
 
-document.addEventListener(
-    "DOMContentLoaded",
-    async function () {
+document.addEventListener("DOMContentLoaded", async () => {
 
-        await cekSession();
+    await cekSession();
 
-        tampilkanTanggal();
+    tampilkanTanggal();
+    updateTimer();
 
-        updateTimer();
-
-    }
-);
+});
 
 
-// =====================================================
+// =========================
 // SESSION
-// =====================================================
+// =========================
 
 async function cekSession() {
 
     const {
         data,
         error
-    } =
-        await supabaseClient.auth.getSession();
-
+    } = await supabaseClient.auth.getSession();
 
     if (error) {
 
         console.error(error);
-
         tampilkanLogin();
-
         return;
 
     }
-
 
     if (data.session) {
 
@@ -87,9 +63,8 @@ async function cekSession() {
 
     }
 
-
     supabaseClient.auth.onAuthStateChange(
-        async function (event, session) {
+        async (event, session) => {
 
             if (
                 event === "SIGNED_IN" &&
@@ -101,7 +76,6 @@ async function cekSession() {
                 );
 
             }
-
 
             if (
                 event === "SIGNED_OUT"
@@ -117,22 +91,17 @@ async function cekSession() {
 }
 
 
-// =====================================================
-// AUTH SCREEN
-// =====================================================
+// =========================
+// LOGIN / REGISTER
+// =========================
 
 function tampilkanLogin() {
 
     const auth =
-        document.getElementById(
-            "authScreen"
-        );
+        document.getElementById("authScreen");
 
     const app =
-        document.querySelector(
-            ".app"
-        );
-
+        document.querySelector(".app");
 
     if (auth) {
         auth.style.display = "flex";
@@ -151,17 +120,14 @@ function showLogin() {
         "loginForm"
     ).style.display = "block";
 
-
     document.getElementById(
         "registerForm"
     ).style.display = "none";
-
 
     document.getElementById(
         "authTitle"
     ).textContent =
         "Login ke akun kamu";
-
 
     clearMessages();
 
@@ -174,17 +140,14 @@ function showRegister() {
         "loginForm"
     ).style.display = "none";
 
-
     document.getElementById(
         "registerForm"
     ).style.display = "block";
-
 
     document.getElementById(
         "authTitle"
     ).textContent =
         "Buat akun baru";
-
 
     clearMessages();
 
@@ -198,17 +161,14 @@ function clearMessages() {
             "loginMessage"
         );
 
-
     const register =
         document.getElementById(
             "registerMessage"
         );
 
-
     if (login) {
         login.textContent = "";
     }
-
 
     if (register) {
         register.textContent = "";
@@ -217,49 +177,31 @@ function clearMessages() {
 }
 
 
-// =====================================================
-// REGISTER
-// =====================================================
-
 async function registerUser() {
 
     const name =
         document
-            .getElementById(
-                "registerName"
-            )
+            .getElementById("registerName")
             .value
             .trim();
-
 
     const email =
         document
-            .getElementById(
-                "registerEmail"
-            )
+            .getElementById("registerEmail")
             .value
             .trim();
 
-
     const password =
         document
-            .getElementById(
-                "registerPassword"
-            )
+            .getElementById("registerPassword")
             .value;
-
 
     const message =
         document.getElementById(
             "registerMessage"
         );
 
-
-    if (
-        !name ||
-        !email ||
-        !password
-    ) {
+    if (!name || !email || !password) {
 
         message.textContent =
             "❌ Isi semua bagian dulu bro.";
@@ -268,10 +210,7 @@ async function registerUser() {
 
     }
 
-
-    if (
-        password.length < 6
-    ) {
+    if (password.length < 6) {
 
         message.textContent =
             "❌ Password minimal 6 karakter.";
@@ -280,46 +219,38 @@ async function registerUser() {
 
     }
 
-
     message.textContent =
         "⏳ Membuat akun...";
-
 
     const {
         data,
         error
-    } =
-        await supabaseClient.auth.signUp({
+    } = await supabaseClient.auth.signUp({
 
-            email: email,
+        email: email,
 
-            password: password,
+        password: password,
 
-            options: {
+        options: {
 
-                data: {
-
-                    full_name: name
-
-                }
-
+            data: {
+                full_name: name
             }
 
-        });
+        }
 
+    });
 
     if (error) {
 
         console.error(error);
 
         message.textContent =
-            "❌ " +
-            error.message;
+            "❌ " + error.message;
 
         return;
 
     }
-
 
     if (!data.session) {
 
@@ -330,46 +261,31 @@ async function registerUser() {
 
     }
 
-
     message.textContent =
         "✅ Akun berhasil dibuat!";
 
 }
 
 
-// =====================================================
-// LOGIN
-// =====================================================
-
 async function loginUser() {
 
     const email =
         document
-            .getElementById(
-                "loginEmail"
-            )
+            .getElementById("loginEmail")
             .value
             .trim();
 
-
     const password =
         document
-            .getElementById(
-                "loginPassword"
-            )
+            .getElementById("loginPassword")
             .value;
-
 
     const message =
         document.getElementById(
             "loginMessage"
         );
 
-
-    if (
-        !email ||
-        !password
-    ) {
+    if (!email || !password) {
 
         message.textContent =
             "❌ Email dan password wajib diisi.";
@@ -378,36 +294,28 @@ async function loginUser() {
 
     }
 
-
     message.textContent =
         "⏳ Login...";
 
-
     const {
-        data,
         error
-    } =
-        await supabaseClient.auth.signInWithPassword({
+    } = await supabaseClient.auth.signInWithPassword({
 
-            email: email,
+        email: email,
+        password: password
 
-            password: password
-
-        });
-
+    });
 
     if (error) {
 
         console.error(error);
 
         message.textContent =
-            "❌ " +
-            error.message;
+            "❌ " + error.message;
 
         return;
 
     }
-
 
     message.textContent =
         "✅ Login berhasil!";
@@ -415,28 +323,18 @@ async function loginUser() {
 }
 
 
-// =====================================================
-// LOGOUT
-// =====================================================
-
 async function logoutUser() {
 
     const yakin =
-        confirm(
-            "Yakin mau logout?"
-        );
-
+        confirm("Yakin mau logout?");
 
     if (!yakin) {
         return;
     }
 
-
     const {
         error
-    } =
-        await supabaseClient.auth.signOut();
-
+    } = await supabaseClient.auth.signOut();
 
     if (error) {
 
@@ -449,128 +347,97 @@ async function logoutUser() {
 
     }
 
-
     location.reload();
 
 }
 
 
-// =====================================================
+// =========================
 // MASUK APP
-// =====================================================
+// =========================
 
-async function masukKeApp(
-    currentUser
-) {
+async function masukKeApp(currentUser) {
 
     user = currentUser;
-
 
     const auth =
         document.getElementById(
             "authScreen"
         );
 
-
     const app =
         document.querySelector(
             ".app"
         );
 
-
     if (auth) {
         auth.style.display = "none";
     }
 
-
     if (app) {
         app.style.display = "flex";
     }
-
 
     nama =
         user.user_metadata?.full_name ||
         user.email?.split("@")[0] ||
         "Fandy";
 
-
     setText(
         "namaDashboard",
         nama
     );
-
 
     setText(
         "introName",
         nama
     );
 
-
     setText(
         "akunEmail",
         user.email || "-"
     );
-
 
     const nameInput =
         document.getElementById(
             "namaUser"
         );
 
-
     if (nameInput) {
-
-        nameInput.value =
-            nama;
-
+        nameInput.value = nama;
     }
 
-
     loadTheme();
-
     loadNotes();
-
 
     await ambilTugas();
 
-
     updateDashboard();
-
     tampilkanAchievement();
-
 
     const intro =
         document.getElementById(
             "intro"
         );
 
-
     if (intro) {
 
-        intro.classList.remove(
-            "hide"
-        );
+        intro.classList.remove("hide");
 
+        setTimeout(() => {
 
-        setTimeout(
-            function () {
+            intro.classList.add("hide");
 
-                intro.classList.add(
-                    "hide"
-                );
-
-            },
-            1600
-        );
+        }, 1600);
 
     }
 
 }
 
 
-// =====================================================
-// DATABASE - AMBIL TUGAS
-// =====================================================
+// =========================
+// DATABASE
+// =========================
 
 async function ambilTugas() {
 
@@ -578,25 +445,22 @@ async function ambilTugas() {
         return;
     }
 
-
     const {
         data,
         error
-    } =
-        await supabaseClient
-            .from("tasks")
-            .select("*")
-            .eq(
-                "user_id",
-                user.id
-            )
-            .order(
-                "dibuat",
-                {
-                    ascending: false
-                }
-            );
-
+    } = await supabaseClient
+        .from("tasks")
+        .select("*")
+        .eq(
+            "user_id",
+            user.id
+        )
+        .order(
+            "dibuat",
+            {
+                ascending: false
+            }
+        );
 
     if (error) {
 
@@ -611,45 +475,31 @@ async function ambilTugas() {
 
     }
 
-
-    tugas =
-        data || [];
-
+    tugas = data || [];
 
     tampilkanTugas();
 
 }
 
 
-// =====================================================
+// =========================
 // MENU
-// =====================================================
+// =========================
 
-function bukaMenu(
-    id,
-    tombol
-) {
+function bukaMenu(id, tombol) {
 
     document
-        .querySelectorAll(
-            ".page"
-        )
-        .forEach(
-            page => {
+        .querySelectorAll(".page")
+        .forEach(page => {
 
-                page.classList.remove(
-                    "active"
-                );
+            page.classList.remove(
+                "active"
+            );
 
-            }
-        );
-
+        });
 
     const halaman =
-        document.getElementById(
-            id
-        );
-
+        document.getElementById(id);
 
     if (halaman) {
 
@@ -659,21 +509,15 @@ function bukaMenu(
 
     }
 
-
     document
-        .querySelectorAll(
-            ".menu"
-        )
-        .forEach(
-            btn => {
+        .querySelectorAll(".menu")
+        .forEach(btn => {
 
-                btn.classList.remove(
-                    "active"
-                );
+            btn.classList.remove(
+                "active"
+            );
 
-            }
-        );
-
+        });
 
     if (tombol) {
 
@@ -686,9 +530,9 @@ function bukaMenu(
 }
 
 
-// =====================================================
+// =========================
 // TAMBAH TUGAS
-// =====================================================
+// =========================
 
 async function tambahTugas() {
 
@@ -697,22 +541,18 @@ async function tambahTugas() {
             "taskInput"
         );
 
-
     const date =
         document.getElementById(
             "dateInput"
         );
-
 
     const priority =
         document.getElementById(
             "priorityInput"
         );
 
-
     const namaTugas =
         input.value.trim();
-
 
     if (!namaTugas) {
 
@@ -724,48 +564,42 @@ async function tambahTugas() {
 
     }
 
-
     if (!user) {
 
-        alert(
-            "Lu belum login."
-        );
+        alert("Lu belum login.");
 
         return;
 
     }
 
-
     const {
         data,
         error
-    } =
-        await supabaseClient
-            .from("tasks")
-            .insert({
+    } = await supabaseClient
+        .from("tasks")
+        .insert({
 
-                user_id:
-                    user.id,
+            user_id:
+                user.id,
 
-                nama:
-                    namaTugas,
+            nama:
+                namaTugas,
 
-                deadline:
-                    date.value || null,
+            deadline:
+                date.value || null,
 
-                priority:
-                    priority.value,
+            priority:
+                priority.value,
 
-                selesai:
-                    false,
+            selesai:
+                false,
 
-                selesai_pada:
-                    null
+            selesai_pada:
+                null
 
-            })
-            .select()
-            .single();
-
+        })
+        .select()
+        .single();
 
     if (error) {
 
@@ -780,29 +614,21 @@ async function tambahTugas() {
 
     }
 
-
-    tugas.unshift(
-        data
-    );
-
+    tugas.unshift(data);
 
     input.value = "";
-
     date.value = "";
 
-
     tampilkanTugas();
-
     updateDashboard();
-
     tampilkanAchievement();
 
 }
 
 
-// =====================================================
+// =========================
 // TAMPILKAN TUGAS
-// =====================================================
+// =========================
 
 function tampilkanTugas() {
 
@@ -811,18 +637,13 @@ function tampilkanTugas() {
             "taskList"
         );
 
-
     if (!container) {
         return;
     }
 
-
     container.innerHTML = "";
 
-
-    let hasil =
-        [...tugas];
-
+    let hasil = [...tugas];
 
     const search =
         document
@@ -833,7 +654,6 @@ function tampilkanTugas() {
             .toLowerCase()
             .trim() || "";
 
-
     if (search) {
 
         hasil =
@@ -841,13 +661,10 @@ function tampilkanTugas() {
                 t =>
                     t.nama
                         .toLowerCase()
-                        .includes(
-                            search
-                        )
+                        .includes(search)
             );
 
     }
-
 
     if (
         filterAktif === "belum"
@@ -855,12 +672,10 @@ function tampilkanTugas() {
 
         hasil =
             hasil.filter(
-                t =>
-                    !t.selesai
+                t => !t.selesai
             );
 
     }
-
 
     if (
         filterAktif === "selesai"
@@ -868,16 +683,12 @@ function tampilkanTugas() {
 
         hasil =
             hasil.filter(
-                t =>
-                    t.selesai
+                t => t.selesai
             );
 
     }
 
-
-    if (
-        hasil.length === 0
-    ) {
+    if (hasil.length === 0) {
 
         container.innerHTML = `
             <div class="empty">
@@ -889,229 +700,171 @@ function tampilkanTugas() {
 
     }
 
+    hasil.forEach(task => {
 
-    hasil.forEach(
-        task => {
-
-            const item =
-                document.createElement(
-                    "div"
-                );
-
-
-            item.className =
-                "task-item";
-
-
-            if (task.selesai) {
-
-                item.classList.add(
-                    "completed"
-                );
-
-            }
-
-
-            const checkbox =
-                document.createElement(
-                    "input"
-                );
-
-
-            checkbox.type =
-                "checkbox";
-
-
-            checkbox.className =
-                "task-check";
-
-
-            checkbox.checked =
-                Boolean(
-                    task.selesai
-                );
-
-
-            checkbox.addEventListener(
-                "change",
-                function () {
-
-                    selesaiTugas(
-                        task.id
-                    );
-
-                }
+        const item =
+            document.createElement(
+                "div"
             );
 
+        item.className =
+            "task-item";
 
-            const info =
-                document.createElement(
-                    "div"
-                );
+        if (task.selesai) {
 
-
-            info.className =
-                "task-info";
-
-
-            const title =
-                document.createElement(
-                    "strong"
-                );
-
-
-            title.textContent =
-                task.nama;
-
-
-            if (task.selesai) {
-
-                title.style.textDecoration =
-                    "line-through";
-
-            }
-
-
-            const detail =
-                document.createElement(
-                    "small"
-                );
-
-
-            let detailText =
-                "";
-
-
-            if (task.deadline) {
-
-                detailText +=
-                    "📅 " +
-                    task.deadline;
-
-            }
-
-
-            if (task.priority) {
-
-                if (detailText) {
-                    detailText +=
-                        " • ";
-                }
-
-
-                detailText +=
-                    "⭐ " +
-                    task.priority;
-
-            }
-
-
-            detail.textContent =
-                detailText;
-
-
-            info.appendChild(
-                title
-            );
-
-
-            info.appendChild(
-                detail
-            );
-
-
-            const editButton =
-                document.createElement(
-                    "button"
-                );
-
-
-            editButton.textContent =
-                "✏️";
-
-
-            editButton.onclick =
-                function () {
-
-                    editTugas(
-                        task.id
-                    );
-
-                };
-
-
-            const deleteButton =
-                document.createElement(
-                    "button"
-                );
-
-
-            deleteButton.textContent =
-                "🗑️";
-
-
-            deleteButton.onclick =
-                function () {
-
-                    hapusTugas(
-                        task.id
-                    );
-
-                };
-
-
-            const actions =
-                document.createElement(
-                    "div"
-                );
-
-
-            actions.className =
-                "task-actions";
-
-
-            actions.appendChild(
-                editButton
-            );
-
-
-            actions.appendChild(
-                deleteButton
-            );
-
-
-            item.appendChild(
-                checkbox
-            );
-
-
-            item.appendChild(
-                info
-            );
-
-
-            item.appendChild(
-                actions
-            );
-
-
-            container.appendChild(
-                item
+            item.classList.add(
+                "completed"
             );
 
         }
-    );
+
+        const checkbox =
+            document.createElement(
+                "input"
+            );
+
+        checkbox.type =
+            "checkbox";
+
+        checkbox.className =
+            "task-check";
+
+        checkbox.checked =
+            Boolean(
+                task.selesai
+            );
+
+        checkbox.addEventListener(
+            "change",
+            () => {
+
+                selesaiTugas(
+                    task.id
+                );
+
+            }
+        );
+
+        const info =
+            document.createElement(
+                "div"
+            );
+
+        info.className =
+            "task-info";
+
+        const title =
+            document.createElement(
+                "strong"
+            );
+
+        title.textContent =
+            task.nama;
+
+        if (task.selesai) {
+
+            title.style.textDecoration =
+                "line-through";
+
+        }
+
+        const detail =
+            document.createElement(
+                "small"
+            );
+
+        let detailText = "";
+
+        if (task.deadline) {
+
+            detailText +=
+                "📅 " +
+                task.deadline;
+
+        }
+
+        if (task.priority) {
+
+            if (detailText) {
+                detailText += " • ";
+            }
+
+            detailText +=
+                "⭐ " +
+                task.priority;
+
+        }
+
+        detail.textContent =
+            detailText;
+
+        info.appendChild(title);
+        info.appendChild(detail);
+
+        const editButton =
+            document.createElement(
+                "button"
+            );
+
+        editButton.textContent =
+            "✏️";
+
+        editButton.onclick =
+            () => editTugas(task.id);
+
+        const deleteButton =
+            document.createElement(
+                "button"
+            );
+
+        deleteButton.textContent =
+            "🗑️";
+
+        deleteButton.onclick =
+            () => hapusTugas(task.id);
+
+        const actions =
+            document.createElement(
+                "div"
+            );
+
+        actions.className =
+            "task-actions";
+
+        actions.appendChild(
+            editButton
+        );
+
+        actions.appendChild(
+            deleteButton
+        );
+
+        item.appendChild(
+            checkbox
+        );
+
+        item.appendChild(
+            info
+        );
+
+        item.appendChild(
+            actions
+        );
+
+        container.appendChild(
+            item
+        );
+
+    });
 
 }
 
 
-// =====================================================
-// SELESAIKAN TUGAS
-// =====================================================
+// =========================
+// SELESAI
+// =========================
 
-async function selesaiTugas(
-    id
-) {
+async function selesaiTugas(id) {
 
     const task =
         tugas.find(
@@ -1120,45 +873,39 @@ async function selesaiTugas(
                 Number(id)
         );
 
-
     if (!task) {
         return;
     }
 
-
     const selesaiBaru =
         !task.selesai;
-
 
     const selesaiPada =
         selesaiBaru
             ? tanggalHariIni()
             : null;
 
-
     const {
         error
-    } =
-        await supabaseClient
-            .from("tasks")
-            .update({
+    } = await supabaseClient
+        .from("tasks")
+        .update({
 
-                selesai:
-                    selesaiBaru,
+            selesai:
+                selesaiBaru,
 
-                selesai_pada:
-                    selesaiPada
+            selesai_pada:
+                selesaiPada
 
-            })
-            .eq(
-                "id",
-                id
-            )
-            .eq(
-                "user_id",
-                user.id
-            );
-
+        })
+        .eq(
+            "id",
+            id
+        )
+        .eq(
+            "user_id",
+            user.id
+        );
 
     if (error) {
 
@@ -1173,31 +920,24 @@ async function selesaiTugas(
 
     }
 
-
     task.selesai =
         selesaiBaru;
-
 
     task.selesai_pada =
         selesaiPada;
 
-
     tampilkanTugas();
-
     updateDashboard();
-
     tampilkanAchievement();
 
 }
 
 
-// =====================================================
+// =========================
 // EDIT
-// =====================================================
+// =========================
 
-async function editTugas(
-    id
-) {
+async function editTugas(id) {
 
     const task =
         tugas.find(
@@ -1206,11 +946,9 @@ async function editTugas(
                 Number(id)
         );
 
-
     if (!task) {
         return;
     }
-
 
     const namaBaru =
         prompt(
@@ -1218,17 +956,11 @@ async function editTugas(
             task.nama
         );
 
-
-    if (
-        namaBaru === null
-    ) {
+    if (namaBaru === null) {
         return;
     }
 
-
-    if (
-        !namaBaru.trim()
-    ) {
+    if (!namaBaru.trim()) {
 
         alert(
             "Nama tugas tidak boleh kosong."
@@ -1238,27 +970,24 @@ async function editTugas(
 
     }
 
-
     const {
         error
-    } =
-        await supabaseClient
-            .from("tasks")
-            .update({
+    } = await supabaseClient
+        .from("tasks")
+        .update({
 
-                nama:
-                    namaBaru.trim()
+            nama:
+                namaBaru.trim()
 
-            })
-            .eq(
-                "id",
-                id
-            )
-            .eq(
-                "user_id",
-                user.id
-            );
-
+        })
+        .eq(
+            "id",
+            id
+        )
+        .eq(
+            "user_id",
+            user.id
+        );
 
     if (error) {
 
@@ -1271,52 +1000,43 @@ async function editTugas(
 
     }
 
-
     task.nama =
         namaBaru.trim();
 
-
     tampilkanTugas();
-
     updateDashboard();
 
 }
 
 
-// =====================================================
+// =========================
 // HAPUS
-// =====================================================
+// =========================
 
-async function hapusTugas(
-    id
-) {
+async function hapusTugas(id) {
 
     const yakin =
         confirm(
             "Hapus tugas ini?"
         );
 
-
     if (!yakin) {
         return;
     }
 
-
     const {
         error
-    } =
-        await supabaseClient
-            .from("tasks")
-            .delete()
-            .eq(
-                "id",
-                id
-            )
-            .eq(
-                "user_id",
-                user.id
-            );
-
+    } = await supabaseClient
+        .from("tasks")
+        .delete()
+        .eq(
+            "id",
+            id
+        )
+        .eq(
+            "user_id",
+            user.id
+        );
 
     if (error) {
 
@@ -1329,7 +1049,6 @@ async function hapusTugas(
 
     }
 
-
     tugas =
         tugas.filter(
             t =>
@@ -1337,30 +1056,21 @@ async function hapusTugas(
                 Number(id)
         );
 
-
     tampilkanTugas();
-
     updateDashboard();
-
     tampilkanAchievement();
 
 }
 
 
-// =====================================================
-// SEARCH
-// =====================================================
+// =========================
+// SEARCH / FILTER
+// =========================
 
 function cariTugas() {
-
     tampilkanTugas();
-
 }
 
-
-// =====================================================
-// FILTER
-// =====================================================
 
 function filterTugas(
     filter,
@@ -1370,21 +1080,17 @@ function filterTugas(
     filterAktif =
         filter;
 
-
     document
         .querySelectorAll(
             ".filter"
         )
-        .forEach(
-            btn => {
+        .forEach(btn => {
 
-                btn.classList.remove(
-                    "active"
-                );
+            btn.classList.remove(
+                "active"
+            );
 
-            }
-        );
-
+        });
 
     if (tombol) {
 
@@ -1394,32 +1100,27 @@ function filterTugas(
 
     }
 
-
     tampilkanTugas();
 
 }
 
 
-// =====================================================
+// =========================
 // DASHBOARD
-// =====================================================
+// =========================
 
 function updateDashboard() {
 
     const total =
         tugas.length;
 
-
     const selesai =
         tugas.filter(
-            t =>
-                t.selesai
+            t => t.selesai
         ).length;
-
 
     const belum =
         total - selesai;
-
 
     const persen =
         total === 0
@@ -1428,42 +1129,35 @@ function updateDashboard() {
                 (selesai / total) * 100
             );
 
-
     setText(
         "dashTotal",
         total
     );
-
 
     setText(
         "dashSelesai",
         selesai
     );
 
-
     setText(
         "dashBelum",
         belum
     );
-
 
     setText(
         "progressPercent",
         persen + "%"
     );
 
-
     setText(
         "progressText",
         persen + "% selesai"
     );
 
-
     const progressBar =
         document.getElementById(
             "progressBar"
         );
-
 
     if (progressBar) {
 
@@ -1472,10 +1166,8 @@ function updateDashboard() {
 
     }
 
-
     const hariIni =
         tanggalHariIni();
-
 
     const selesaiHariIni =
         tugas.filter(
@@ -1485,22 +1177,18 @@ function updateDashboard() {
                 hariIni
         ).length;
 
-
     setText(
         "dailyGoalText",
         Math.min(
             selesaiHariIni,
             5
-        ) +
-        " / 5"
+        ) + " / 5"
     );
-
 
     const goalBar =
         document.getElementById(
             "dailyGoalBar"
         );
-
 
     if (goalBar) {
 
@@ -1508,23 +1196,18 @@ function updateDashboard() {
             Math.min(
                 selesaiHariIni / 5 * 100,
                 100
-            ) +
-            "%";
+            ) + "%";
 
     }
-
 
     const goalMessage =
         document.getElementById(
             "dailyGoalMessage"
         );
 
-
     if (goalMessage) {
 
-        if (
-            selesaiHariIni >= 5
-        ) {
+        if (selesaiHariIni >= 5) {
 
             goalMessage.textContent =
                 "🔥 Daily Goal tercapai!";
@@ -1540,78 +1223,64 @@ function updateDashboard() {
 
     }
 
-
     setText(
         "streakUser",
         hitungStreak()
     );
 
-
     updateXP();
-
     tampilkanDeadline();
-
     tampilkanRecent();
 
 }
 
 
-// =====================================================
+// =========================
 // XP
-// =====================================================
+// =========================
 
 function updateXP() {
 
     const selesai =
         tugas.filter(
-            t =>
-                t.selesai
+            t => t.selesai
         ).length;
-
 
     const xp =
         selesai * 20;
-
 
     const level =
         Math.floor(
             xp / 100
         ) + 1;
 
-
     const xpLevel =
         xp % 100;
-
 
     setText(
         "levelUser",
         level
     );
 
-
     setText(
         "levelText",
         level
     );
-
 
     setText(
         "xpSekarang",
         xpLevel
     );
 
-
     setText(
         "xpBerikutnya",
         100
     );
 
-
     const bar =
         document.getElementById(
             "xpBar"
         );
-
 
     if (bar) {
 
@@ -1623,9 +1292,9 @@ function updateXP() {
 }
 
 
-// =====================================================
+// =========================
 // DEADLINE
-// =====================================================
+// =========================
 
 function tampilkanDeadline() {
 
@@ -1634,11 +1303,9 @@ function tampilkanDeadline() {
             "deadlineTasks"
         );
 
-
     if (!container) {
         return;
     }
-
 
     const data =
         tugas
@@ -1658,10 +1325,7 @@ function tampilkanDeadline() {
                 5
             );
 
-
-    if (
-        data.length === 0
-    ) {
+    if (data.length === 0) {
 
         container.innerHTML = `
             <div class="empty">
@@ -1673,35 +1337,31 @@ function tampilkanDeadline() {
 
     }
 
-
     container.innerHTML =
-        data
-            .map(
-                t => `
+        data.map(
+            t => `
 
-                    <div class="recent-item">
+                <div class="recent-item">
 
-                        <strong>
-                            ${escapeHTML(t.nama)}
-                        </strong>
+                    <strong>
+                        ${escapeHTML(t.nama)}
+                    </strong>
 
-                        <small>
-                            📅
-                            ${t.deadline}
-                        </small>
+                    <small>
+                        📅 ${t.deadline}
+                    </small>
 
-                    </div>
+                </div>
 
-                `
-            )
-            .join("");
+            `
+        ).join("");
 
 }
 
 
-// =====================================================
+// =========================
 // RECENT
-// =====================================================
+// =========================
 
 function tampilkanRecent() {
 
@@ -1710,11 +1370,9 @@ function tampilkanRecent() {
             "recentTasks"
         );
 
-
     if (!container) {
         return;
     }
-
 
     const data =
         tugas.slice(
@@ -1722,10 +1380,7 @@ function tampilkanRecent() {
             5
         );
 
-
-    if (
-        data.length === 0
-    ) {
+    if (data.length === 0) {
 
         container.innerHTML = `
             <div class="empty">
@@ -1737,36 +1392,33 @@ function tampilkanRecent() {
 
     }
 
-
     container.innerHTML =
-        data
-            .map(
-                t => `
+        data.map(
+            t => `
 
-                    <div class="recent-item">
+                <div class="recent-item">
 
-                        <strong>
-                            ${
-                                t.selesai
-                                    ? "✅"
-                                    : "⏳"
-                            }
+                    <strong>
+                        ${
+                            t.selesai
+                                ? "✅"
+                                : "⏳"
+                        }
 
-                            ${escapeHTML(t.nama)}
-                        </strong>
+                        ${escapeHTML(t.nama)}
+                    </strong>
 
-                    </div>
+                </div>
 
-                `
-            )
-            .join("");
+            `
+        ).join("");
 
 }
 
 
-// =====================================================
+// =========================
 // ACHIEVEMENT
-// =====================================================
+// =========================
 
 function tampilkanAchievement() {
 
@@ -1775,18 +1427,14 @@ function tampilkanAchievement() {
             "achievementList"
         );
 
-
     if (!container) {
         return;
     }
 
-
     const jumlah =
         tugas.filter(
-            t =>
-                t.selesai
+            t => t.selesai
         ).length;
-
 
     const achievements = [
 
@@ -1836,51 +1484,48 @@ function tampilkanAchievement() {
 
     ];
 
-
     container.innerHTML =
-        achievements
-            .map(
-                a => `
+        achievements.map(
+            a => `
 
-                    <div
-                        class="
-                            achievement-card
-                            ${
-                                jumlah >= a.syarat
-                                    ? "unlocked"
-                                    : ""
-                            }
-                        "
-                    >
+                <div
+                    class="
+                        achievement-card
+                        ${
+                            jumlah >= a.syarat
+                                ? "unlocked"
+                                : ""
+                        }
+                    "
+                >
 
-                        <h3>
-                            ${a.nama}
-                        </h3>
+                    <h3>
+                        ${a.nama}
+                    </h3>
 
-                        <p>
-                            ${a.text}
-                        </p>
+                    <p>
+                        ${a.text}
+                    </p>
 
-                        <strong>
-                            ${
-                                jumlah >= a.syarat
-                                    ? "✅ Terbuka"
-                                    : "🔒 Terkunci"
-                            }
-                        </strong>
+                    <strong>
+                        ${
+                            jumlah >= a.syarat
+                                ? "✅ Terbuka"
+                                : "🔒 Terkunci"
+                        }
+                    </strong>
 
-                    </div>
+                </div>
 
-                `
-            )
-            .join("");
+            `
+        ).join("");
 
 }
 
 
-// =====================================================
+// =========================
 // NAMA
-// =====================================================
+// =========================
 
 async function simpanNama() {
 
@@ -1889,10 +1534,8 @@ async function simpanNama() {
             "namaUser"
         );
 
-
     const namaBaru =
         input.value.trim();
-
 
     if (!namaBaru) {
 
@@ -1904,21 +1547,16 @@ async function simpanNama() {
 
     }
 
-
     const {
         error
-    } =
-        await supabaseClient.auth.updateUser({
+    } = await supabaseClient.auth.updateUser({
 
-            data: {
+        data: {
+            full_name:
+                namaBaru
+        }
 
-                full_name:
-                    namaBaru
-
-            }
-
-        });
-
+    });
 
     if (error) {
 
@@ -1931,22 +1569,18 @@ async function simpanNama() {
 
     }
 
-
     nama =
         namaBaru;
-
 
     setText(
         "namaDashboard",
         nama
     );
 
-
     setText(
         "introName",
         nama
     );
-
 
     alert(
         "Nama berhasil disimpan 👍"
@@ -1955,9 +1589,9 @@ async function simpanNama() {
 }
 
 
-// =====================================================
+// =========================
 // CATATAN
-// =====================================================
+// =========================
 
 function noteKey() {
 
@@ -1976,17 +1610,14 @@ function loadNotes() {
             "notes"
         );
 
-
     if (!notes) {
         return;
     }
 
-
     notes.value =
         localStorage.getItem(
             noteKey()
-        ) ||
-        "";
+        ) || "";
 
 }
 
@@ -1998,17 +1629,14 @@ function simpanCatatan() {
             "notes"
         );
 
-
     if (!notes) {
         return;
     }
-
 
     localStorage.setItem(
         noteKey(),
         notes.value
     );
-
 
     setText(
         "noteStatus",
@@ -2018,9 +1646,9 @@ function simpanCatatan() {
 }
 
 
-// =====================================================
+// =========================
 // TIMER
-// =====================================================
+// =========================
 
 function mulaiTimer() {
 
@@ -2028,33 +1656,26 @@ function mulaiTimer() {
         return;
     }
 
-
     timerInterval =
         setInterval(
-            function () {
+            () => {
 
-                if (
-                    waktu <= 0
-                ) {
+                if (waktu <= 0) {
 
                     clearInterval(
                         timerInterval
                     );
 
-
                     timerInterval =
                         null;
-
 
                     alert(
                         "🔥 Waktu fokus selesai!"
                     );
 
-
                     return;
 
                 }
-
 
                 waktu--;
 
@@ -2073,7 +1694,6 @@ function pauseTimer() {
         timerInterval
     );
 
-
     timerInterval =
         null;
 
@@ -2086,14 +1706,11 @@ function resetTimer() {
         timerInterval
     );
 
-
     timerInterval =
         null;
 
-
     waktu =
         25 * 60;
-
 
     updateTimer();
 
@@ -2107,11 +1724,9 @@ function updateTimer() {
             "timer"
         );
 
-
     if (!timer) {
         return;
     }
-
 
     const menit =
         Math.floor(
@@ -2123,7 +1738,6 @@ function updateTimer() {
                 "0"
             );
 
-
     const detik =
         (waktu % 60)
             .toString()
@@ -2132,16 +1746,15 @@ function updateTimer() {
                 "0"
             );
 
-
     timer.textContent =
         `${menit}:${detik}`;
 
 }
 
 
-// =====================================================
-// TEMA
-// =====================================================
+// =========================
+// THEME
+// =========================
 
 function themeKey() {
 
@@ -2158,7 +1771,6 @@ function toggleTema() {
     document.body.classList.toggle(
         "light"
     );
-
 
     localStorage.setItem(
         themeKey(),
@@ -2179,10 +1791,7 @@ function loadTheme() {
             themeKey()
         );
 
-
-    if (
-        tema === "light"
-    ) {
+    if (tema === "light") {
 
         document.body.classList.add(
             "light"
@@ -2199,9 +1808,9 @@ function loadTheme() {
 }
 
 
-// =====================================================
+// =========================
 // HAPUS SEMUA
-// =====================================================
+// =========================
 
 async function hapusSemuaTugas() {
 
@@ -2210,23 +1819,19 @@ async function hapusSemuaTugas() {
             "Yakin mau hapus SEMUA tugas?"
         );
 
-
     if (!yakin) {
         return;
     }
 
-
     const {
         error
-    } =
-        await supabaseClient
-            .from("tasks")
-            .delete()
-            .eq(
-                "user_id",
-                user.id
-            );
-
+    } = await supabaseClient
+        .from("tasks")
+        .delete()
+        .eq(
+            "user_id",
+            user.id
+        );
 
     if (error) {
 
@@ -2239,16 +1844,11 @@ async function hapusSemuaTugas() {
 
     }
 
-
     tugas = [];
 
-
     tampilkanTugas();
-
     updateDashboard();
-
     tampilkanAchievement();
-
 
     alert(
         "Semua tugas berhasil dihapus ✅"
@@ -2257,9 +1857,9 @@ async function hapusSemuaTugas() {
 }
 
 
-// =====================================================
+// =========================
 // KALENDER
-// =====================================================
+// =========================
 
 function lihatTanggal() {
 
@@ -2268,20 +1868,14 @@ function lihatTanggal() {
             "calendarDate"
         )?.value;
 
-
     const result =
         document.getElementById(
             "calendarResult"
         );
 
-
-    if (
-        !result ||
-        !date
-    ) {
+    if (!result || !date) {
         return;
     }
-
 
     const hasil =
         tugas.filter(
@@ -2290,43 +1884,40 @@ function lihatTanggal() {
                 date
         );
 
-
-    if (
-        hasil.length === 0
-    ) {
+    if (hasil.length === 0) {
 
         result.innerHTML =
             "Tidak ada tugas di tanggal ini 😎";
 
         return;
+
     }
 
-
     result.innerHTML =
-        hasil
-            .map(
-                t => `
+        hasil.map(
+            t => `
 
-                    <div>
-                        ${
-                            t.selesai
-                                ? "✅"
-                                : "⏳"
-                        }
+                <div>
 
-                        ${escapeHTML(t.nama)}
-                    </div>
+                    ${
+                        t.selesai
+                            ? "✅"
+                            : "⏳"
+                    }
 
-                `
-            )
-            .join("");
+                    ${escapeHTML(t.nama)}
+
+                </div>
+
+            `
+        ).join("");
 
 }
 
 
-// =====================================================
+// =========================
 // EXPORT
-// =====================================================
+// =========================
 
 function exportData() {
 
@@ -2343,7 +1934,6 @@ function exportData() {
 
     };
 
-
     const blob =
         new Blob(
             [
@@ -2359,29 +1949,23 @@ function exportData() {
             }
         );
 
-
     const url =
         URL.createObjectURL(
             blob
         );
-
 
     const a =
         document.createElement(
             "a"
         );
 
-
     a.href =
         url;
-
 
     a.download =
         "fandy-task-backup.json";
 
-
     a.click();
-
 
     URL.revokeObjectURL(
         url
@@ -2390,9 +1974,9 @@ function exportData() {
 }
 
 
-// =====================================================
+// =========================
 // IMPORT
-// =====================================================
+// =========================
 
 function importData() {
 
@@ -2401,14 +1985,11 @@ function importData() {
             "input"
         );
 
-
     input.type =
         "file";
 
-
     input.accept =
         ".json";
-
 
     input.onchange =
         function (event) {
@@ -2416,15 +1997,12 @@ function importData() {
             const file =
                 event.target.files[0];
 
-
             if (!file) {
                 return;
             }
 
-
             const reader =
                 new FileReader();
-
 
             reader.onload =
                 async function () {
@@ -2436,14 +2014,12 @@ function importData() {
                                 reader.result
                             );
 
-
                         const daftar =
                             Array.isArray(
                                 data.tugas
                             )
                                 ? data.tugas
                                 : [];
-
 
                         if (
                             daftar.length === 0
@@ -2456,7 +2032,6 @@ function importData() {
                             return;
 
                         }
-
 
                         const rows =
                             daftar.map(
@@ -2490,7 +2065,6 @@ function importData() {
                                 })
                             );
 
-
                         const {
                             error
                         } =
@@ -2499,7 +2073,6 @@ function importData() {
                                 .insert(
                                     rows
                                 );
-
 
                         if (error) {
 
@@ -2512,9 +2085,7 @@ function importData() {
 
                         }
 
-
                         await ambilTugas();
-
 
                         alert(
                             "Data berhasil diimport ✅"
@@ -2526,7 +2097,6 @@ function importData() {
                             error
                         );
 
-
                         alert(
                             "File backup tidak valid."
                         );
@@ -2535,22 +2105,18 @@ function importData() {
 
                 };
 
-
-            reader.readAsText(
-                file
-            );
+            reader.readAsText(file);
 
         };
-
 
     input.click();
 
 }
 
 
-// =====================================================
+// =========================
 // STREAK
-// =====================================================
+// =========================
 
 function hitungStreak() {
 
@@ -2575,7 +2141,6 @@ function hitungStreak() {
                 b.localeCompare(a)
         );
 
-
     if (
         tanggal.length === 0
     ) {
@@ -2584,10 +2149,8 @@ function hitungStreak() {
 
     }
 
-
     const today =
         new Date();
-
 
     today.setHours(
         0,
@@ -2596,10 +2159,7 @@ function hitungStreak() {
         0
     );
 
-
-    let streak =
-        0;
-
+    let streak = 0;
 
     for (
         let i = 0;
@@ -2612,17 +2172,14 @@ function hitungStreak() {
                 today
             );
 
-
         expected.setDate(
             today.getDate() - i
         );
-
 
         const expectedString =
             formatDate(
                 expected
             );
-
 
         if (
             tanggal.includes(
@@ -2640,15 +2197,14 @@ function hitungStreak() {
 
     }
 
-
     return streak;
 
 }
 
 
-// =====================================================
+// =========================
 // HELPERS
-// =====================================================
+// =========================
 
 function setText(
     id,
@@ -2659,7 +2215,6 @@ function setText(
         document.getElementById(
             id
         );
-
 
     if (el) {
 
@@ -2687,7 +2242,6 @@ function formatDate(
     const tahun =
         date.getFullYear();
 
-
     const bulan =
         String(
             date.getMonth() + 1
@@ -2696,7 +2250,6 @@ function formatDate(
             "0"
         );
 
-
     const hari =
         String(
             date.getDate()
@@ -2704,7 +2257,6 @@ function formatDate(
             2,
             "0"
         );
-
 
     return (
         tahun +
@@ -2726,10 +2278,8 @@ function escapeHTML(
             "div"
         );
 
-
     div.textContent =
         text;
-
 
     return div.innerHTML;
 
@@ -2743,11 +2293,9 @@ function tampilkanTanggal() {
             "tanggalHariIni"
         );
 
-
     if (!tanggal) {
         return;
     }
-
 
     tanggal.textContent =
         new Date().toLocaleDateString(
